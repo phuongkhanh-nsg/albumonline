@@ -10,7 +10,7 @@ const { createToken, hashPassword, verifyPassword, requireAuth } = require('../m
 function getGoogleOAuthConfig() {
   const clientId = process.env.GOOGLE_CLIENT_ID;
   const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
-  const appUrl = (process.env.APP_URL || 'https://album-nsg.vercel.app').replace(/\/+$/, '');
+  const appUrl = (process.env.APP_URL || 'https://albumonline.vercel.app').replace(/\/+$/, '');
   if (!clientId || !clientSecret) return null;
   return { clientId, clientSecret, redirectUri: `${appUrl}/api/auth/google/callback` };
 }
@@ -460,7 +460,7 @@ router.get('/google', (req, res) => {
 
 // GET /api/auth/google/callback — Handle Google OAuth callback
 router.get('/google/callback', async (req, res) => {
-  const appUrl = (process.env.APP_URL || 'https://album-nsg.vercel.app').replace(/\/+$/, '');
+  const appUrl = (process.env.APP_URL || 'https://albumonline.vercel.app').replace(/\/+$/, '');
   try {
     const { code } = req.query;
     if (!code) return res.redirect(`${appUrl}/login?error=no_code`);
