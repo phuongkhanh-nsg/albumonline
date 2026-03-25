@@ -1,4 +1,4 @@
-const { google } = require('googleapis');
+const fetch = require('node-fetch');
 
 /**
  * Extract folder ID from various Google Drive link formats
@@ -21,35 +21,47 @@ function extractFolderId(link) {
 /**
  * List images from a Google Drive folder.
  * Uses OAuth2 access token if available, falls back to API key.
+ * Lightweight implementation using node-fetch (no googleapis package).
  */
 async function listDriveImages(folderId, { accessToken, apiKey }) {
-  let drive;
-
-  if (accessToken) {
-    const oauth2 = new google.auth.OAuth2();
-    oauth2.setCredentials({ access_token: accessToken });
-    drive = google.drive({ version: 'v3', auth: oauth2 });
-  } else if (apiKey) {
-    drive = google.drive({ version: 'v3', auth: apiKey });
-  } else {
-    throw new Error('Cần Google API Key hoặc đăng nhập Google để truy cập Drive');
-  }
-
   const images = [];
   let pageToken = null;
 
-  do {
-    const res = await drive.files.list({
-      q: `'${folderId}' in parents and mimeType contains 'image/' and trashed = false`,
-      fields: 'nextPageToken, files(id, name, mimeType, imageMediaMetadata, thumbnailLink, webContentLink)',
-      pageSize: 1000,
-      orderBy: 'name',
-      pageToken: pageToken,
-      supportsAllDrives: true,
-      includeItemsFromAllDrives: true,
-    });
+  const query = `'${folderId}' in parents and mimeType contains 'image/' and trashed = false`;
+  const fields = 'nextPageToken, files(id, name, mimeType, imageMediaMetadata, thumbnailLink, webContentLink)';
 
-    for (const file of res.data.files || []) {
+  do {
+    const params = new URLSearchParams({
+      q: query,
+      fields: fields,
+      pageSize: '1000',
+      orderBy: 'name',
+      supportsAllDrives: 'true',
+      includeItemsFromAllDrives: 'true',
+    });
+    if (pageToken) params.set('pageToken', pageToken);
+
+    const url = `https://www.googleapis.com/drive/v3/files?${params.toString()}`;
+    const headers = {};
+
+    if (accessToken) {
+      headers['Authorization'] = `Bearer ${accessToken}`;
+    } else if (apiKey) {
+      params.set('key', apiKey);
+    } else {
+      throw new Error('Cần Google API Key hoặc đăng nhập Google để truy cập Drive');
+    }
+
+    const res = await fetch(url, { headers });
+    if (!res.ok) {
+      const errBody = await res.text();
+      console.error('Drive API error:', res.status, errBody);
+      throw new Error(`Drive API lỗi: ${res.status}`);
+    }
+
+    const data = await res.json();
+
+    for (const file of data.files || []) {
       images.push({
         id: file.id,
         name: file.name,
@@ -61,23 +73,37 @@ async function listDriveImages(folderId, { accessToken, apiKey }) {
       });
     }
 
-    pageToken = res.data.nextPageToken;
+    pageToken = data.nextPageToken;
   } while (pageToken);
 
   return images;
 }
 
 /**
- * Refresh a Google access token using a refresh token
+ * Refresh a Google access token using a refresh token.
+ * Lightweight implementation using node-fetch (no googleapis package).
  */
 async function refreshAccessToken(refreshToken) {
-  const oauth2 = new google.auth.OAuth2(
-    process.env.GOOGLE_CLIENT_ID || process.env.albumonline_GOOGLE_CLIENT_ID,
-    process.env.GOOGLE_CLIENT_SECRET || process.env.albumonline_GOOGLE_CLIENT_SECRET
-  );
-  oauth2.setCredentials({ refresh_token: refreshToken });
-  const { credentials } = await oauth2.refreshAccessToken();
-  return credentials.access_token;
+  const clientId = (process.env.GOOGLE_CLIENT_ID || process.env.albumonline_GOOGLE_CLIENT_ID || '').trim();
+  const clientSecret = (process.env.GOOGLE_CLIENT_SECRET || process.env.albumonline_GOOGLE_CLIENT_SECRET || '').trim();
+
+  const res = await fetch('https://oauth2.googleapis.com/token', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: new URLSearchParams({
+      client_id: clientId,
+      client_secret: clientSecret,
+      refresh_token: refreshToken,
+      grant_type: 'refresh_token',
+    }).toString(),
+  });
+
+  const data = await res.json();
+  if (!data.access_token) {
+    console.error('Token refresh failed:', data);
+    throw new Error('Không thể làm mới access token');
+  }
+  return data.access_token;
 }
 
 module.exports = { extractFolderId, listDriveImages, refreshAccessToken };
