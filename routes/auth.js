@@ -1,20 +1,18 @@
 
 const express = require('express');
 const crypto = require('crypto');
-const { google } = require('googleapis');
+const fetch = require('node-fetch');
 const router = express.Router();
 const db = require('../db/database');
 const { createToken, hashPassword, verifyPassword, requireAuth } = require('../middleware/auth');
 
-// Google OAuth helper
-function getGoogleOAuth2Client() {
+// Google OAuth config (lightweight - no googleapis package)
+function getGoogleOAuthConfig() {
   const clientId = process.env.GOOGLE_CLIENT_ID;
   const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
   const appUrl = (process.env.APP_URL || 'https://album-nsg.vercel.app').replace(/\/+$/, '');
   if (!clientId || !clientSecret) return null;
-  const redirectUri = `${appUrl}/api/auth/google/callback`;
-  console.log('Google OAuth redirect_uri:', redirectUri);
-  return new google.auth.OAuth2(clientId, clientSecret, redirectUri);
+  return { clientId, clientSecret, redirectUri: `${appUrl}/api/auth/google/callback` };
 }
 
 // Middleware kiểm tra quyền admin
@@ -441,23 +439,23 @@ router.post('/reset-password', async (req, res) => {
 });
 
 
-// ===== GOOGLE OAUTH =====
+// ===== GOOGLE OAUTH (lightweight - no googleapis package) =====
 
 // GET /api/auth/google — Redirect to Google consent screen
 router.get('/google', (req, res) => {
-  const oauth2Client = getGoogleOAuth2Client();
-  if (!oauth2Client) {
+  const config = getGoogleOAuthConfig();
+  if (!config) {
     return res.redirect('/login?error=google_not_configured');
   }
-  const url = oauth2Client.generateAuthUrl({
+  const params = new URLSearchParams({
+    client_id: config.clientId,
+    redirect_uri: config.redirectUri,
+    response_type: 'code',
+    scope: 'openid email profile',
     access_type: 'offline',
     prompt: 'consent',
-    scope: [
-      'https://www.googleapis.com/auth/userinfo.profile',
-      'https://www.googleapis.com/auth/userinfo.email',
-    ],
   });
-  res.redirect(url);
+  res.redirect(`https://accounts.google.com/o/oauth2/v2/auth?${params.toString()}`);
 });
 
 // GET /api/auth/google/callback — Handle Google OAuth callback
@@ -467,16 +465,32 @@ router.get('/google/callback', async (req, res) => {
     const { code } = req.query;
     if (!code) return res.redirect(`${appUrl}/login?error=no_code`);
 
-    const oauth2Client = getGoogleOAuth2Client();
-    if (!oauth2Client) return res.redirect(`${appUrl}/login?error=google_not_configured`);
+    const config = getGoogleOAuthConfig();
+    if (!config) return res.redirect(`${appUrl}/login?error=google_not_configured`);
 
-    // Exchange code for tokens
-    const { tokens } = await oauth2Client.getToken(code);
-    oauth2Client.setCredentials(tokens);
+    // Exchange code for tokens via HTTP POST
+    const tokenRes = await fetch('https://oauth2.googleapis.com/token', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({
+        code,
+        client_id: config.clientId,
+        client_secret: config.clientSecret,
+        redirect_uri: config.redirectUri,
+        grant_type: 'authorization_code',
+      }).toString(),
+    });
+    const tokens = await tokenRes.json();
+    if (!tokens.access_token) {
+      console.error('Google token exchange failed:', tokens);
+      return res.redirect(`${appUrl}/login?error=oauth_failed`);
+    }
 
-    // Get user info from Google
-    const oauth2 = google.oauth2({ version: 'v2', auth: oauth2Client });
-    const { data: profile } = await oauth2.userinfo.get();
+    // Get user info from Google via HTTP GET
+    const profileRes = await fetch('https://www.googleapis.com/oauth2/v2/userinfo', {
+      headers: { Authorization: `Bearer ${tokens.access_token}` },
+    });
+    const profile = await profileRes.json();
 
     const googleId = profile.id;
     const email = (profile.email || '').toLowerCase();
@@ -490,7 +504,6 @@ router.get('/google/callback', async (req, res) => {
       // Check if user with same email exists (link Google to existing account)
       user = await db.prepare('SELECT * FROM users WHERE email = ?').get(email);
       if (user) {
-        // Link Google account to existing user
         await db.prepare('UPDATE users SET google_id = ?, avatar_url = COALESCE(avatar_url, ?), google_access_token = ?, google_refresh_token = COALESCE(?, google_refresh_token) WHERE id = ?')
           .run(googleId, avatarUrl, tokens.access_token || '', tokens.refresh_token || null, user.id);
         user.google_id = googleId;
@@ -502,7 +515,6 @@ router.get('/google/callback', async (req, res) => {
       const userId = crypto.randomUUID().substring(0, 12);
       const username = email.split('@')[0].replace(/[^a-zA-Z0-9_]/g, '_').substring(0, 30).toLowerCase();
 
-      // Ensure username is unique
       let finalUsername = username;
       let counter = 1;
       while (await db.prepare('SELECT id FROM users WHERE username = ?').get(finalUsername)) {
@@ -517,7 +529,6 @@ router.get('/google/callback', async (req, res) => {
 
       user = { id: userId, username: finalUsername, email, display_name: displayName, role: 'user', google_id: googleId, avatar_url: avatarUrl };
     } else {
-      // Update tokens for existing user
       await db.prepare('UPDATE users SET google_access_token = ?, google_refresh_token = COALESCE(?, google_refresh_token), avatar_url = COALESCE(?, avatar_url) WHERE id = ?')
         .run(tokens.access_token || '', tokens.refresh_token || null, avatarUrl, user.id);
     }
