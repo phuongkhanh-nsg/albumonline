@@ -8,9 +8,9 @@ const { createToken, hashPassword, verifyPassword, requireAuth } = require('../m
 
 // Google OAuth config (lightweight - no googleapis package)
 function getGoogleOAuthConfig() {
-  const clientId = process.env.GOOGLE_CLIENT_ID;
-  const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
-  const appUrl = (process.env.APP_URL || 'https://album-nsg.vercel.app').replace(/\/+$/, '');
+  const clientId = (process.env.GOOGLE_CLIENT_ID || '').trim();
+  const clientSecret = (process.env.GOOGLE_CLIENT_SECRET || '').trim();
+  const appUrl = (process.env.APP_URL || 'https://album-nsg.vercel.app').trim().replace(/\/+$/, '');
   if (!clientId || !clientSecret) return null;
   return { clientId, clientSecret, redirectUri: `${appUrl}/api/auth/google/callback` };
 }
