@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tài khoản - AlbumOnline</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📸</text></svg>">
+</head>
+<body>
+  <nav class="navbar">
+    <a href="/" class="navbar-brand" style="font-size:1.2rem;gap:6px;">
+      <span style="font-size:1.3em;">📸</span> <span>ALBUM NSG</span>
+    </a>
+    <button class="navbar-toggle" aria-label="Mở menu" onclick="toggleNavbarMenu()">☰</button>
+    <div class="navbar-overlay" id="navbarOverlay" onclick="closeNavbarMenu()"></div>
+    <div class="navbar-links" id="navbarLinks">
+      <a href="/">Trang chủ</a>
+      <a href="/create">Tạo Album</a>
+      <a href="/manage">Quản lý</a>
+      <a href="/admin-users" id="adminMenuLink" style="display:none">Quản lý thành viên</a>
+      <a href="/admin-settings" id="adminSettingsLink" style="display:none">Cấu hình</a>
+      <script>
+        document.addEventListener('DOMContentLoaded', showAdminMenuLink);
+      </script>
+    </div>
+  </nav>
+  <script>
+    window.toggleNavbarMenu = function() {
+      const links = document.getElementById('navbarLinks');
+      const overlay = document.getElementById('navbarOverlay');
+      links.classList.toggle('show');
+      overlay.classList.toggle('show');
+      if (links.classList.contains('show')) {
+        links.querySelectorAll('a').forEach(a => {
+          a.addEventListener('click', closeNavbarMenu);
+        });
+      }
+    }
+    window.closeNavbarMenu = function() {
+      document.getElementById('navbarLinks').classList.remove('show');
+      document.getElementById('navbarOverlay').classList.remove('show');
+    }
+  </script>
+
+  <div class="container" style="padding-top: 3rem; padding-bottom: 3rem;">
+    <div class="section-title">
+      <h2>👤 Quản lý tài khoản</h2>
+      <p>Cập nhật thông tin cá nhân và bảo mật</p>
+    </div>
+
+    <div id="loadingState" class="loading-spinner">
+      <div class="spinner"></div>
+    </div>
+
+    <div id="accountContent" style="display: none; max-width: 700px; margin: 0 auto;">
+      <!-- Profile Info -->
+      <div class="card" style="margin-bottom: 2rem;">
+        <h3 style="margin-bottom: 1.5rem;">📋 Thông tin cá nhân</h3>
+
+        <div class="account-info">
+          <div class="info-row">
+            <span class="info-label">Tên đăng nhập</span>
+            <span class="info-value" id="infoUsername">-</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">Ngày tham gia</span>
+            <span class="info-value" id="infoCreatedAt">-</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">Số album</span>
+            <span class="info-value" id="infoAlbumCount">0</span>
+          </div>
+        </div>
+
+        <form id="profileForm" style="margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid var(--border);">
+          <div class="form-group">
+            <label>😊 Tên hiển thị</label>
+            <input type="text" class="form-control" id="displayName" placeholder="Nhập tên hiển thị...">
+          </div>
+          <div class="form-group">
+            <label>📧 Email</label>
+            <input type="email" class="form-control" id="email" placeholder="Nhập email...">
+          </div>
+          <button type="submit" class="btn btn-primary btn-sm" id="profileBtn">💾 Lưu thay đổi</button>
+        </form>
+      </div>
+
+      <!-- Change Password -->
+      <div class="card" id="passwordCard" style="margin-bottom: 2rem;">
+        <h3 style="margin-bottom: 1.5rem;">🔐 Đổi mật khẩu</h3>
+        <div id="noPasswordNote" style="display: none; margin-bottom: 1rem; padding: 0.75rem; background: rgba(66,133,244,0.1); border-radius: 8px; font-size: 0.9rem;">
+          ℹ️ Bạn đăng nhập bằng Google. Bạn có thể thiết lập mật khẩu để đăng nhập bằng tên đăng nhập.
+        </div>
+        <form id="passwordForm">
+          <div class="form-group" id="currentPasswordGroup">
+            <label>Mật khẩu hiện tại</label>
+            <input type="password" class="form-control" id="currentPassword" placeholder="Nhập mật khẩu hiện tại..." autocomplete="current-password">
+          </div>
+          <div class="form-group">
+            <label>Mật khẩu mới</label>
+            <input type="password" class="form-control" id="newPassword" placeholder="Ít nhất 6 ký tự" required minlength="6" autocomplete="new-password">
+          </div>
+          <div class="form-group">
+            <label>Xác nhận mật khẩu mới</label>
+            <input type="password" class="form-control" id="confirmNewPassword" placeholder="Nhập lại mật khẩu mới" required autocomplete="new-password">
+          </div>
+          <button type="submit" class="btn btn-warning btn-sm" id="passwordBtn">🔑 Đổi mật khẩu</button>
+        </form>
+      </div>
+
+      <!-- Logout -->
+      <div class="card" style="text-align: center;">
+        <button class="btn btn-danger" onclick="logout()">🚪 Đăng xuất</button>
+      </div>
+    </div>
+  </div>
+
+  <footer class="footer">
+    <p>© 2026 AlbumOnline - Chia sẻ Album ảnh từ Google Drive - Tùy chỉnh bởi Rồng Con HG</p>
+  </footer>
+
+  <script src="/js/utils.js"></script>
+  <script>
+    if (!isLoggedIn()) {
+      window.location.href = '/login';
+    }
+
+    loadAccount();
+
+    async function loadAccount() {
+      try {
+        const user = await api('/api/auth/me');
+
+        document.getElementById('loadingState').style.display = 'none';
+        document.getElementById('accountContent').style.display = 'block';
+
+        document.getElementById('infoUsername').textContent = user.username;
+        document.getElementById('infoCreatedAt').textContent = formatDate(user.created_at);
+        document.getElementById('infoAlbumCount').textContent = user.albumCount || 0;
+        document.getElementById('displayName').value = user.display_name || '';
+        document.getElementById('email').value = user.email || '';
+
+        // Handle Google-only users
+        if (!user.hasPassword) {
+          document.getElementById('currentPasswordGroup').style.display = 'none';
+          document.getElementById('noPasswordNote').style.display = 'block';
+        }
+      } catch (err) {
+        if (err.message.includes('đăng nhập') || err.message.includes('hết hạn')) {
+          removeToken();
+          window.location.href = '/login';
+          return;
+        }
+        document.getElementById('loadingState').innerHTML = `
+          <div class="empty-state">
+            <div class="icon">😢</div>
+            <h3>${err.message}</h3>
+          </div>`;
+      }
+    }
+
+    // Update profile
+    document.getElementById('profileForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const btn = document.getElementById('profileBtn');
+      btn.disabled = true;
+
+      try {
+        await api('/api/auth/me', {
+          method: 'PUT',
+          body: JSON.stringify({
+            displayName: document.getElementById('displayName').value.trim(),
+            email: document.getElementById('email').value.trim(),
+          }),
+        });
+
+        // Update local user
+        const user = getUser();
+        if (user) {
+          user.displayName = document.getElementById('displayName').value.trim() || user.displayName;
+          user.email = document.getElementById('email').value.trim() || user.email;
+          setUser(user);
+          updateNavbar();
+        }
+
+        showToast('Đã cập nhật thông tin!', 'success');
+      } catch (err) {
+        showToast(err.message, 'error');
+      } finally {
+        btn.disabled = false;
+      }
+    });
+
+    // Change password
+    document.getElementById('passwordForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const newPw = document.getElementById('newPassword').value;
+      if (newPw !== document.getElementById('confirmNewPassword').value) {
+        showToast('Mật khẩu xác nhận không khớp!', 'error');
+        return;
+      }
+
+      const btn = document.getElementById('passwordBtn');
+      btn.disabled = true;
+
+      try {
+        await api('/api/auth/password', {
+          method: 'PUT',
+          body: JSON.stringify({
+            currentPassword: document.getElementById('currentPassword').value,
+            newPassword: newPw,
+          }),
+        });
+
+        showToast('Đã đổi mật khẩu thành công!', 'success');
+        document.getElementById('passwordForm').reset();
+      } catch (err) {
+        showToast(err.message, 'error');
+      } finally {
+        btn.disabled = false;
+      }
+    });
+  </script>
+</body>
+</html>

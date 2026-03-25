@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Đăng ký - AlbumOnline</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📸</text></svg>">
+</head>
+<body>
+  <nav class="navbar">
+    <a href="/" class="navbar-brand" style="font-size:1.2rem;gap:6px;">
+      <span style="font-size:1.3em;">📸</span> <span>ALBUM NSG</span>
+    </a>
+    <button class="navbar-toggle" aria-label="Mở menu" onclick="toggleNavbarMenu()">☰</button>
+    <div class="navbar-overlay" id="navbarOverlay" onclick="closeNavbarMenu()"></div>
+    <div class="navbar-links" id="navbarLinks">
+      <a href="/">Trang chủ</a>
+      <a href="/create">Tạo Album</a>
+      <a href="/manage">Quản lý</a>
+      <a href="/admin-users" id="adminMenuLink" style="display:none">Quản lý thành viên</a>
+      <a href="/admin-settings" id="adminSettingsLink" style="display:none">Cấu hình</a>
+    </div>
+  </nav>
+  <script>
+    window.toggleNavbarMenu = function() {
+      const links = document.getElementById('navbarLinks');
+      const overlay = document.getElementById('navbarOverlay');
+      links.classList.toggle('show');
+      overlay.classList.toggle('show');
+      if (links.classList.contains('show')) {
+        links.querySelectorAll('a').forEach(a => {
+          a.addEventListener('click', closeNavbarMenu);
+        });
+      }
+    }
+    window.closeNavbarMenu = function() {
+      document.getElementById('navbarLinks').classList.remove('show');
+      document.getElementById('navbarOverlay').classList.remove('show');
+    }
+  </script>
+
+  <div class="container" style="padding-top: 4rem; padding-bottom: 3rem;">
+    <div class="section-title">
+      <h2>📝 Đăng ký tài khoản</h2>
+      <p>Tạo tài khoản để quản lý album dễ dàng hơn</p>
+    </div>
+
+    <div class="card auth-card">
+      <form id="registerForm">
+        <div class="form-group">
+          <label>👤 Tên đăng nhập *</label>
+          <input type="text" class="form-control" id="username" placeholder="VD: nguyenvana" required autocomplete="username" minlength="3" maxlength="30" pattern="[a-zA-Z0-9_]+">
+          <small>Chỉ chứa chữ cái, số và dấu gạch dưới (3-30 ký tự)</small>
+        </div>
+
+        <div class="form-group">
+          <label>📧 Email *</label>
+          <input type="email" class="form-control" id="email" placeholder="VD: email@gmail.com" required autocomplete="email">
+        </div>
+
+        <div class="form-group">
+          <label>😊 Tên hiển thị</label>
+          <input type="text" class="form-control" id="displayName" placeholder="VD: Nguyễn Văn A" autocomplete="name">
+        </div>
+
+        <div class="form-group">
+          <label>🔒 Mật khẩu *</label>
+          <input type="password" class="form-control" id="password" placeholder="Ít nhất 6 ký tự" required minlength="6" autocomplete="new-password">
+        </div>
+
+        <div class="form-group">
+          <label>🔒 Xác nhận mật khẩu *</label>
+          <input type="password" class="form-control" id="confirmPassword" placeholder="Nhập lại mật khẩu" required autocomplete="new-password">
+        </div>
+
+        <button type="submit" class="btn btn-primary" style="width: 100%;" id="submitBtn">
+          🚀 Đăng ký
+        </button>
+      </form>
+
+      <div class="auth-footer">
+        <p>Đã có tài khoản? <a href="/login">Đăng nhập</a></p>
+      </div>
+    </div>
+  </div>
+
+  <footer class="footer">
+    <p>© 2026 AlbumOnline - Chia sẻ Album ảnh từ Google Drive - Tùy chỉnh bởi Rồng Con HG</p>
+  </footer>
+
+  <script src="/js/utils.js"></script>
+  <script>
+    if (isLoggedIn()) window.location.href = '/manage';
+
+    document.getElementById('registerForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const password = document.getElementById('password').value;
+      const confirmPassword = document.getElementById('confirmPassword').value;
+
+      if (password !== confirmPassword) {
+        showToast('Mật khẩu xác nhận không khớp!', 'error');
+        return;
+      }
+
+      const btn = document.getElementById('submitBtn');
+      btn.disabled = true;
+      btn.textContent = '⏳ Đang đăng ký...';
+
+      try {
+        const data = await api('/api/auth/register', {
+          method: 'POST',
+          body: JSON.stringify({
+            username: document.getElementById('username').value.trim(),
+            email: document.getElementById('email').value.trim(),
+            displayName: document.getElementById('displayName').value.trim(),
+            password: password,
+          }),
+        });
+
+        setToken(data.token);
+        setUser(data.user);
+        showToast('Đăng ký thành công!', 'success');
+        setTimeout(() => window.location.href = '/manage', 500);
+      } catch (err) {
+        showToast(err.message, 'error');
+        btn.disabled = false;
+        btn.textContent = '🚀 Đăng ký';
+      }
+    });
+  </script>
+</body>
+</html>

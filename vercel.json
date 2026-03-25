@@ -1,0 +1,31 @@
+{
+  "version": 2,
+  "builds": [
+    {
+      "src": "api/*.js",
+      "use": "@vercel/node"
+    },
+    {
+      "src": "public/**",
+      "use": "@vercel/static"
+    }
+  ],
+  "routes": [
+    { "src": "^/auth/(.*)$", "dest": "/api/auth/$1" },
+    { "src": "/api/set-admin", "dest": "/api/set-admin.js" },
+    { "src": "/api/check-admin", "dest": "/api/check-admin.js" },
+    { "src": "/api/(.*)", "dest": "/api/index.js" },
+    { "src": "/css/(.*)", "dest": "/public/css/$1" },
+    { "src": "/js/(.*)", "dest": "/public/js/$1" },
+    { "src": "/login", "dest": "/public/login.html" },
+    { "src": "/register", "dest": "/public/register.html" },
+    { "src": "/account", "dest": "/public/account.html" },
+    { "src": "/admin-users", "dest": "/public/admin-users.html" },
+    { "src": "/admin-settings", "dest": "/public/admin-settings.html" },
+    { "src": "/forgot-password", "dest": "/public/forgot-password.html" },
+    { "src": "/create", "dest": "/public/create.html" },
+    { "src": "/manage", "dest": "/public/manage.html" },
+    { "src": "/album/(.*)", "dest": "/api/index.js" },
+    { "src": "/", "dest": "/public/index.html" }
+  ]
+}

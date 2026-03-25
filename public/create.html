@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tạo Album - AlbumOnline</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📸</text></svg>">
+</head>
+<body>
+  <nav class="navbar">
+    <a href="/" class="navbar-brand" style="font-size:1.2rem;gap:6px;">
+      <span style="font-size:1.3em;">📸</span> <span>ALBUM NSG</span>
+    </a>
+    <button class="navbar-toggle" aria-label="Mở menu" onclick="toggleNavbarMenu()">☰</button>
+    <div class="navbar-overlay" id="navbarOverlay" onclick="closeNavbarMenu()"></div>
+    <div class="navbar-links" id="navbarLinks">
+      <a href="/">Trang chủ</a>
+      <a href="/create" class="active">Tạo Album</a>
+      <a href="/manage">Quản lý</a>
+      <a href="/admin-users" id="adminMenuLink" style="display:none">Quản lý thành viên</a>
+      <a href="/admin-settings" id="adminSettingsLink" style="display:none">Cấu hình</a>
+    </div>
+  </nav>
+  <script src="/js/utils.js"></script>
+  <script>
+    window.toggleNavbarMenu = function() {
+      const links = document.getElementById('navbarLinks');
+      const overlay = document.getElementById('navbarOverlay');
+      links.classList.toggle('show');
+      overlay.classList.toggle('show');
+      if (links.classList.contains('show')) {
+        links.querySelectorAll('a').forEach(a => {
+          a.addEventListener('click', closeNavbarMenu);
+        });
+      }
+    }
+    window.closeNavbarMenu = function() {
+      document.getElementById('navbarLinks').classList.remove('show');
+      document.getElementById('navbarOverlay').classList.remove('show');
+    }
+  </script>
+
+  <div class="container" style="padding-top: 3rem; padding-bottom: 3rem;">
+    <div class="section-title">
+      <h2>🧧 Tạo Album Mới</h2>
+      <p>Dán link thư mục Google Drive để tạo album chia sẻ</p>
+    </div>
+
+    <div class="card" style="max-width: 700px; margin: 0 auto;">
+      <form id="createAlbumForm">
+        <div class="form-group">
+          <label>📝 Tên Album *</label>
+          <input type="text" class="form-control" id="albumTitle" placeholder="VD: Album NSG" required>
+        </div>
+
+        <div class="form-group">
+          <label>🔗 Link Google Drive *</label>
+          <input type="url" class="form-control" id="driveLink" placeholder="https://drive.google.com/drive/folders/..." required>
+          <small>Dán link thư mục Google Drive chứa ảnh. Đăng nhập bằng Google để truy cập thư mục riêng tư.</small>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>🔒 Mật khẩu (tuỳ chọn)</label>
+            <input type="text" class="form-control" id="albumPassword" placeholder="Để trống nếu không cần">
+          </div>
+          <div class="form-group">
+            <label>🔢 Giới hạn chọn ảnh</label>
+            <input type="number" class="form-control" id="maxSelections" placeholder="0 = Không giới hạn" min="0" value="0">
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>⏰ Thời hạn album</label>
+            <select class="form-control" id="expiresInDays">
+              <option value="0">Không hết hạn</option>
+              <option value="5">5 ngày</option>
+              <option value="7">7 ngày</option>
+              <option value="15">15 ngày</option>
+              <option value="30">30 ngày</option>
+              <option value="90">90 ngày</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>&nbsp;</label>
+            <div class="checkbox-group" style="height: 45px; align-items: center;">
+              <input type="checkbox" id="allowDownload" checked>
+              <label for="allowDownload" style="margin: 0; font-weight: 400;">Cho phép tải ảnh</label>
+            </div>
+          </div>
+        </div>
+
+        <button type="submit" class="btn btn-primary" style="width: 100; margin-top: 1rem;" id="submitBtn">
+          🚀 Tạo Album
+        </button>
+      </form>
+
+      <!-- Success Result -->
+      <div id="resultSection" style="display: none; margin-top: 2rem; padding-top: 2rem; border-top: 1px solid var(--border);">
+        <h3 style="color: var(--success); margin-bottom: 1rem;">✅ Album đã được tạo thành công!</h3>
+
+        <div class="form-group">
+          <label>🔗 Link chia sẻ album</label>
+          <div class="copy-link-group">
+            <input type="text" class="form-control" id="shareLink" readonly>
+            <button class="btn btn-primary btn-sm" onclick="copyToClipboard(document.getElementById('shareLink').value)">📋 Copy</button>
+          </div>
+        </div>
+
+        <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+          <a id="viewAlbumBtn" href="#" class="btn btn-success btn-sm">👁️ Xem Album</a>
+          <a href="/create" class="btn btn-outline btn-sm">➕ Tạo album khác</a>
+          <a href="/manage" class="btn btn-outline btn-sm">📋 Quản lý album</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <footer class="footer">
+    <p>© 2026 AlbumOnline - Chia sẻ Album ảnh từ Google Drive - Tùy chỉnh bởi Rồng Con HG</p>
+  </footer>
+
+  <script src="/js/utils.js"></script>
+  <script>
+    const form = document.getElementById('createAlbumForm');
+    const submitBtn = document.getElementById('submitBtn');
+    const resultSection = document.getElementById('resultSection');
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      submitBtn.disabled = true;
+      submitBtn.textContent = '⏳ Đang tạo album...';
+
+      try {
+        const data = await api('/api/albums', {
+          method: 'POST',
+          body: JSON.stringify({
+            title: document.getElementById('albumTitle').value.trim(),
+            driveLink: document.getElementById('driveLink').value.trim(),
+            password: document.getElementById('albumPassword').value.trim() || null,
+            maxSelections: parseInt(document.getElementById('maxSelections').value) || 0,
+            allowDownload: document.getElementById('allowDownload').checked,
+            expiresInDays: parseInt(document.getElementById('expiresInDays').value) || 0,
+          }),
+        });
+
+        const fullLink = window.location.origin + data.shareLink;
+        document.getElementById('shareLink').value = fullLink;
+        document.getElementById('viewAlbumBtn').href = data.shareLink;
+        resultSection.style.display = 'block';
+        form.style.display = 'none';
+
+        showToast('Album đã được tạo thành công!', 'success');
+      } catch (err) {
+        showToast(err.message, 'error');
+        submitBtn.disabled = false;
+        submitBtn.textContent = '🚀 Tạo Album';
+      }
+    });
+  </script>
+</body>
+</html>

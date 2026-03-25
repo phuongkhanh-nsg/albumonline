@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AlbumOnline - Chia sẻ Album ảnh từ Google Drive</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📸</text></svg>">
+
+  <!-- Open Graph thumbnail for social sharing -->
+  <meta property="og:image" content="/thumbnail.png">
+  <meta property="og:image:type" content="image/png">
+  <meta property="og:image:width" content="256">
+  <meta property="og:image:height" content="256">
+  <meta property="og:title" content="Album Online - Lưu giữ khoảnh khắc của bạn">
+  <meta property="og:description" content="Chia sẻ album ảnh, lưu giữ kỷ niệm cùng Album Online.">
+</head>
+<body>
+  <nav class="navbar">
+    <a href="/" class="navbar-brand" style="font-size:1.2rem;gap:6px;">
+      <span style="font-size:1.3em;">📸</span> <span>ALBUM NSG</span>
+    </a>
+    <button class="navbar-toggle" aria-label="Mở menu" onclick="toggleNavbarMenu()">☰</button>
+    <div class="navbar-overlay" id="navbarOverlay" onclick="closeNavbarMenu()"></div>
+    <div class="navbar-links" id="navbarLinks">
+      <a href="/" class="active">Trang chủ</a>
+      <a href="/create">Tạo Album</a>
+      <a href="/manage">Quản lý</a>
+      <a href="/admin-users" id="adminMenuLink" style="display:none">Quản lý thành viên</a>
+      <a href="/admin-settings" id="adminSettingsLink" style="display:none">Cấu hình</a>
+    </div>
+  </nav>
+  <script src="/js/utils.js"></script>
+  <script>
+    window.toggleNavbarMenu = function() {
+      const links = document.getElementById('navbarLinks');
+      const overlay = document.getElementById('navbarOverlay');
+      links.classList.toggle('show');
+      overlay.classList.toggle('show');
+      if (links.classList.contains('show')) {
+        links.querySelectorAll('a').forEach(a => {
+          a.addEventListener('click', closeNavbarMenu);
+        });
+      }
+    }
+    window.closeNavbarMenu = function() {
+      document.getElementById('navbarLinks').classList.remove('show');
+      document.getElementById('navbarOverlay').classList.remove('show');
+    }
+    document.addEventListener('DOMContentLoaded', showAdminMenuLink);
+  </script>
+
+  <!-- Hero Section -->
+  <section class="hero">
+    <h1>📸 Chia sẻ Album ảnh<br>từ <span class="google-drive-text">Google Drive</span></h1>
+    <p>Tạo album ảnh đẹp mắt từ link Google Drive. Chia sẻ cho khách hàng lọc và chọn ảnh dễ dàng, nhanh chóng.</p>
+    <div class="hero-cta">
+      <a href="/create" class="btn btn-primary">🧧 Bắt đầu tạo album</a>
+      <a href="/manage" class="btn btn-outline">📋 Quản lý album</a>
+    </div>
+  </section>
+
+  <!-- Features Section -->
+  <section class="features">
+    <div class="section-title">
+      <h2>Tính năng nổi bật</h2>
+      <p>Mọi thứ bạn cần để chia sẻ album ảnh chuyên nghiệp</p>
+    </div>
+    <div class="features-grid">
+      <div class="feature-card">
+        <div class="feature-icon">🔗</div>
+        <h3>Liên kết Google Drive</h3>
+        <p>Dán link thư mục Google Drive, hệ thống tự động lấy ảnh và tạo album đẹp mắt.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">🖼️</div>
+        <h3>Gallery đẹp mắt</h3>
+        <p>Hiển thị ảnh dạng lưới responsive, hỗ trợ xem ảnh lớn (lightbox) chuyên nghiệp.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">✅</div>
+        <h3>Lọc & Chọn ảnh</h3>
+        <p>Khách hàng có thể chọn ảnh yêu thích trực tiếp trên album. Giới hạn số lượng chọn tùy ý.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">🔒</div>
+        <h3>Bảo mật Album</h3>
+        <p>Đặt mật khẩu cho album, chỉ người có mật khẩu mới xem được.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">📱</div>
+        <h3>Responsive</h3>
+        <p>Giao diện tối ưu trên mọi thiết bị: điện thoại, máy tính bảng, máy tính.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">⚡</div>
+        <h3>Nhanh chóng</h3>
+        <p>Tạo album chỉ trong vài giây. Chia sẻ link ngay lập tức cho khách hàng.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- How it works -->
+  <section class="features">
+    <div class="section-title">
+      <h2>Cách sử dụng</h2>
+      <p>Chỉ 3 bước đơn giản</p>
+    </div>
+    <div class="features-grid">
+      <div class="feature-card">
+        <div class="feature-icon">1️⃣</div>
+        <h3>Upload ảnh lên Google Drive</h3>
+        <p>Tạo thư mục trên Google Drive và upload ảnh vào. Đăng nhập bằng Google để liên kết tự động.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">2️⃣</div>
+        <h3>Dán link & Tạo album</h3>
+        <p>Dán link thư mục Google Drive vào trang tạo album. Đặt tên, mật khẩu (tuỳ chọn).</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">3️⃣</div>
+        <h3>Chia sẻ cho khách</h3>
+        <p>Copy link album và gửi cho khách hàng. Họ có thể xem, chọn ảnh yêu thích ngay.</p>
+      </div>
+    </div>
+  </section>
+
+    <footer class="footer">
+    <p>© 2026 AlbumOnline - Chia sẻ Album ảnh từ Google Drive - Tùy chỉnh bởi Rồng Con HG</p>
+  </footer>
+
+  <script src="/js/utils.js"></script>
+</body>
+</html>

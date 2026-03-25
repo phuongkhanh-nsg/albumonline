@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Quản lý Album - AlbumOnline</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📸</text></svg>">
+  <style>
+    .edit-modal-overlay {
+      display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,0.7); z-index: 500; align-items: center; justify-content: center; padding: 1rem;
+    }
+    .edit-modal-overlay.active { display: flex; }
+    .edit-modal {
+      background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius);
+      padding: 2rem; max-width: 500px; width: 100%; max-height: 90vh; overflow-y: auto;
+    }
+    .edit-modal h2 { margin-bottom: 1.5rem; display: flex; align-items: center; gap: 10px; }
+    .edit-modal-close { margin-left: auto; background: none; border: none; color: var(--text-muted); font-size: 1.5rem; cursor: pointer; }
+
+    .pagination {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.4rem;
+      padding: 1.5rem 0;
+      flex-wrap: wrap;
+    }
+    .pagination button {
+      padding: 8px 14px;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text-muted);
+      font-size: 0.85rem;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .pagination button:hover {
+      background: rgba(229,62,62,0.1);
+      border-color: var(--primary);
+      color: var(--text);
+    }
+    .pagination button.active {
+      background: var(--primary);
+      border-color: var(--primary);
+      color: #fff;
+      font-weight: 700;
+    }
+    .pagination button:disabled {
+      opacity: 0.3;
+      cursor: not-allowed;
+    }
+    .pagination .page-info {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      padding: 0 0.5rem;
+    }
+
+    /* Small action buttons (matching admin-users style) */
+    .album-card-actions {
+      display: flex;
+      gap: 0.4rem;
+      margin-top: 0.5rem;
+      flex-wrap: wrap;
+    }
+    .btn-action {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 5px 10px;
+      border-radius: 6px;
+      font-size: 0.72rem;
+      font-weight: 600;
+      cursor: pointer;
+      border: 1px solid transparent;
+      transition: all 0.2s ease;
+      white-space: nowrap;
+      text-decoration: none;
+    }
+    .btn-view {
+      background: rgba(72, 187, 120, 0.1);
+      color: #68d391;
+      border-color: rgba(72, 187, 120, 0.25);
+    }
+    .btn-view:hover {
+      background: rgba(72, 187, 120, 0.2);
+      border-color: #68d391;
+      transform: translateY(-1px);
+    }
+    .btn-edit-action {
+      background: rgba(214, 158, 46, 0.1);
+      color: #ecc94b;
+      border-color: rgba(214, 158, 46, 0.25);
+    }
+    .btn-edit-action:hover {
+      background: rgba(214, 158, 46, 0.2);
+      border-color: #ecc94b;
+      transform: translateY(-1px);
+    }
+    .btn-link-action {
+      background: rgba(49, 130, 206, 0.1);
+      color: #63b3ed;
+      border-color: rgba(49, 130, 206, 0.25);
+    }
+    .btn-link-action:hover {
+      background: rgba(49, 130, 206, 0.2);
+      border-color: #63b3ed;
+      transform: translateY(-1px);
+    }
+    .btn-delete-action {
+      background: rgba(229, 62, 62, 0.1);
+      color: #fc8181;
+      border-color: rgba(229, 62, 62, 0.25);
+    }
+    .btn-delete-action:hover {
+      background: rgba(229, 62, 62, 0.2);
+      border-color: #fc8181;
+      transform: translateY(-1px);
+    }
+  </style>
+</head>
+<body>
+  <nav class="navbar">
+    <a href="/" class="navbar-brand" style="font-size:1.2rem;gap:6px;">
+      <span style="font-size:1.3em;">📸</span> <span>ALBUM NSG</span>
+    </a>
+    <button class="navbar-toggle" aria-label="Mở menu" onclick="toggleNavbarMenu()">☰</button>
+    <div class="navbar-overlay" id="navbarOverlay" onclick="closeNavbarMenu()"></div>
+    <div class="navbar-links" id="navbarLinks">
+      <a href="/">Trang chủ</a>
+      <a href="/create">Tạo Album</a>
+      <a href="/manage" class="active">Quản lý</a>
+      <a href="/admin-users" id="adminMenuLink" style="display:none">Quản lý thành viên</a>
+      <a href="/admin-settings" id="adminSettingsLink" style="display:none">Cấu hình</a>
+    </div>
+  </nav>
+
+  <div class="container" style="padding-top: 3rem; padding-bottom: 3rem;">
+    <div class="section-title">
+      <h2>📋 Quản lý Album</h2>
+      <p>Danh sách các album bạn đã tạo</p>
+    </div>
+
+    <div id="loadingState" class="loading-spinner">
+      <div class="spinner"></div>
+    </div>
+
+    <div id="searchBar" style="display:none; margin-bottom: 1.5rem;">
+      <div style="position:relative; max-width: 400px;">
+        <span style="position:absolute; left:12px; top:50%; transform:translateY(-50%); font-size:0.9rem; pointer-events:none;">🔍</span>
+        <input type="text" id="albumSearch" placeholder="Tìm kiếm album..." oninput="filterAlbums()" style="width:100%; padding: 10px 14px 10px 36px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; color: var(--text); font-size: 0.9rem;">
+      </div>
+    </div>
+
+    <div id="albumsList" style="display: none;"></div>
+
+    <div id="emptyState" class="empty-state" style="display: none;">
+      <div class="icon">📭</div>
+      <h3>Chưa có album nào</h3>
+      <p style="margin-bottom: 1rem;">Bạn chưa tạo album nào. Hãy bắt đầu tạo album đầu tiên!</p>
+      <a href="/create" class="btn btn-primary">🧧 Tạo Album</a>
+    </div>
+
+    <div id="loginPrompt" class="empty-state" style="display: none;">
+      <div class="icon">🔒</div>
+      <h3>Đăng nhập để quản lý album</h3>
+      <p style="margin-bottom: 1rem;">Bạn cần đăng nhập để xem và quản lý album của mình.</p>
+      <div style="display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;">
+        <a href="/login" class="btn btn-primary">🔑 Đăng nhập</a>
+        <a href="/register" class="btn btn-outline">📝 Đăng ký</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Edit Album Modal -->
+  <div class="edit-modal-overlay" id="editModalOverlay" onclick="if(event.target===this)closeEditModal()">
+    <div class="edit-modal">
+      <h2>
+        ✏️ Chỉnh sửa Album
+        <button class="edit-modal-close" onclick="closeEditModal()">✕</button>
+      </h2>
+      <form id="editForm">
+        <input type="hidden" id="editAlbumId">
+        <div class="form-group">
+          <label>📝 Tiêu đề album</label>
+          <input type="text" class="form-control" id="editTitle" placeholder="Nhập tiêu đề..." required>
+        </div>
+        <div class="form-group">
+          <label>📅 Ngày hết hạn</label>
+          <input type="datetime-local" class="form-control" id="editExpires">
+          <small>Để trống nếu không muốn hết hạn</small>
+        </div>
+        <div class="form-group">
+          <label>🔒 Mật khẩu album</label>
+          <input type="text" class="form-control" id="editPassword" placeholder="Để trống nếu không cần mật khẩu">
+          <small>Người xem cần nhập mật khẩu để xem album</small>
+        </div>
+        <div style="display: flex; gap: 0.75rem; flex-wrap: wrap; margin-top: 1.5rem;">
+          <button type="submit" class="btn btn-primary btn-sm" id="editSaveBtn">💾 Lưu thay đổi</button>
+          <button type="button" class="btn btn-outline btn-sm" onclick="closeEditModal()">Hủy</button>
+          <button type="button" class="btn btn-danger btn-sm" id="editRemovePassBtn" onclick="removePassword()" style="display:none;">🔓 Xoá mật khẩu</button>
+          <button type="button" class="btn btn-outline btn-sm" id="editRemoveExpireBtn" onclick="removeExpiry()" style="display:none;">♾️ Xoá hết hạn</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <footer class="footer">
+    <p>© <span id="footerYear"></span> AlbumOnline - Chia sẻ Album ảnh từ Google Drive - Tùy chỉnh bởi Rồng Con HG</p>
+  </footer>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      showAdminMenuLink();
+      var yearSpan = document.getElementById('footerYear');
+      if (yearSpan) yearSpan.textContent = new Date().getFullYear();
+    });
+  </script>
+
+  <script src="/js/utils.js"></script>
+  <script>
+    let albumsData = [];
+    let filteredAlbums = [];
+    let currentPage = 1;
+    const ALBUMS_PER_PAGE = 30;
+
+    if (!isLoggedIn()) {
+      document.getElementById('loadingState').style.display = 'none';
+      document.getElementById('loginPrompt').style.display = 'block';
+    } else {
+      loadAlbums();
+    }
+
+    async function loadAlbums() {
+      try {
+        albumsData = await api('/api/albums');
+        document.getElementById('loadingState').style.display = 'none';
+        if (albumsData.length === 0) {
+          document.getElementById('emptyState').style.display = 'block';
+          return;
+        }
+        renderAlbums();
+        document.getElementById('searchBar').style.display = 'block';
+      } catch (err) {
+        document.getElementById('loadingState').innerHTML = `
+          <div class="empty-state">
+            <div class="icon">😢</div>
+            <h3>Có lỗi xảy ra</h3>
+            <p>${err.message}</p>
+          </div>`;
+      }
+    }
+
+    function renderAlbums() {
+      const container = document.getElementById('albumsList');
+      container.style.display = 'block';
+
+      const source = filteredAlbums.length > 0 || document.getElementById('albumSearch').value.trim() ? filteredAlbums : albumsData;
+
+      if (!source.length) {
+        const q = document.getElementById('albumSearch').value.trim();
+        if (q) {
+          container.innerHTML = '<div class="empty-state"><div class="icon">🔍</div><h3>Không tìm thấy album</h3><p>Không có album nào khớp với "' + escapeHtml(q) + '"</p></div>';
+        } else {
+          container.innerHTML = '';
+        }
+        return;
+      }
+
+      const totalPages = Math.ceil(source.length / ALBUMS_PER_PAGE);
+      if (currentPage > totalPages) currentPage = totalPages;
+      const start = (currentPage - 1) * ALBUMS_PER_PAGE;
+      const pageAlbums = source.slice(start, start + ALBUMS_PER_PAGE);
+
+      let html = `<div class="albums-grid">
+        ${pageAlbums.map(album => `
+          <div class="album-card" id="album-${album.id}">
+            <div class="album-card-cover" style="text-align:center; margin-bottom:8px; height:120px; display:flex; align-items:center; justify-content:center; background:#222; border-radius:8px; overflow:hidden;">
+              ${album.cover_photo ? `<img src="${album.cover_photo}" alt="cover" style="width:auto; max-width:100%; object-fit:cover; display:block; margin:auto; background:#222;" onerror="this.onerror=null;this.src='/avatar.png';">` : '<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:#888;">Không có ảnh</div>'}
+            </div>
+            <div class="album-card-body">
+              <h3>${escapeHtml(album.title)}</h3>
+              <div class="album-card-meta">
+                <span>📷 ${album.photo_count} ảnh</span>
+                <span>👁️ ${album.view_count} lượt xem</span>
+                <span>📅 ${formatDate(album.created_at)}</span>
+              </div>
+              ${album.password ? '<span class="badge badge-orange">🔒 Có mật khẩu</span> ' : ''}
+              ${album.expires_at ? `<span class="badge badge-red">⏰ Hết hạn: ${formatDate(album.expires_at)}</span> ` : '<span class="badge badge-green">♾️ Không hết hạn</span> '}
+              <div class="album-card-actions">
+                <a href="/album/${album.id}" class="btn-action btn-view">↗ Xem</a>
+                <button class="btn-action btn-edit-action" onclick="openEditModal('${album.id}')">✏️ Sửa</button>
+                <button class="btn-action btn-link-action" onclick="copyToClipboard(window.location.origin + '/album/${album.id}')">🔗 Link</button>
+                <button class="btn-action btn-delete-action" onclick="deleteAlbum('${album.id}')">🗑️ Xoá</button>
+              </div>
+            </div>
+          </div>
+        `).join('')}
+      </div>`;
+
+      // Pagination
+      if (totalPages > 1) {
+        html += '<div class="pagination">';
+        html += `<button onclick="goToPage(1)" ${currentPage === 1 ? 'disabled' : ''}>«</button>`;
+        html += `<button onclick="goToPage(${currentPage - 1})" ${currentPage === 1 ? 'disabled' : ''}>‹</button>`;
+        const maxButtons = 5;
+        let startPage = Math.max(1, currentPage - Math.floor(maxButtons / 2));
+        let endPage = Math.min(totalPages, startPage + maxButtons - 1);
+        if (endPage - startPage < maxButtons - 1) startPage = Math.max(1, endPage - maxButtons + 1);
+        for (let i = startPage; i <= endPage; i++) {
+          html += `<button onclick="goToPage(${i})" class="${i === currentPage ? 'active' : ''}">${i}</button>`;
+        }
+        html += `<button onclick="goToPage(${currentPage + 1})" ${currentPage === totalPages ? 'disabled' : ''}>›</button>`;
+        html += `<button onclick="goToPage(${totalPages})" ${currentPage === totalPages ? 'disabled' : ''}>»</button>`;
+        html += `<span class="page-info">${source.length} albums</span>`;
+        html += '</div>';
+      }
+
+      container.innerHTML = html;
+    }
+
+    function filterAlbums() {
+      const q = document.getElementById('albumSearch').value.toLowerCase().trim();
+      currentPage = 1;
+      filteredAlbums = q ? albumsData.filter(a => a.title.toLowerCase().includes(q)) : albumsData;
+      renderAlbums();
+    }
+
+    function goToPage(page) {
+      currentPage = page;
+      renderAlbums();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function openEditModal(albumId) {
+      const album = albumsData.find(a => a.id === albumId);
+      if (!album) return;
+      document.getElementById('editAlbumId').value = albumId;
+      document.getElementById('editTitle').value = album.title || '';
+      document.getElementById('editPassword').value = album.password || '';
+      if (album.expires_at) {
+        const d = new Date(album.expires_at);
+        document.getElementById('editExpires').value = new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+        document.getElementById('editRemoveExpireBtn').style.display = '';
+      } else {
+        document.getElementById('editExpires').value = '';
+        document.getElementById('editRemoveExpireBtn').style.display = 'none';
+      }
+      document.getElementById('editRemovePassBtn').style.display = album.password ? '' : 'none';
+      document.getElementById('editModalOverlay').classList.add('active');
+    }
+
+    function closeEditModal() {
+      document.getElementById('editModalOverlay').classList.remove('active');
+    }
+
+    async function removePassword() {
+      const albumId = document.getElementById('editAlbumId').value;
+      try {
+        await api(`/api/albums/${albumId}`, { method: 'PUT', body: JSON.stringify({ password: '' }) });
+        const album = albumsData.find(a => a.id === albumId);
+        if (album) album.password = null;
+        document.getElementById('editPassword').value = '';
+        document.getElementById('editRemovePassBtn').style.display = 'none';
+        renderAlbums();
+        showToast('Đã xoá mật khẩu album!', 'success');
+      } catch (err) { showToast(err.message, 'error'); }
+    }
+
+    async function removeExpiry() {
+      const albumId = document.getElementById('editAlbumId').value;
+      try {
+        await api(`/api/albums/${albumId}`, { method: 'PUT', body: JSON.stringify({ expiresAt: null }) });
+        const album = albumsData.find(a => a.id === albumId);
+        if (album) album.expires_at = null;
+        document.getElementById('editExpires').value = '';
+        document.getElementById('editRemoveExpireBtn').style.display = 'none';
+        renderAlbums();
+        showToast('Đã xoá ngày hết hạn!', 'success');
+      } catch (err) { showToast(err.message, 'error'); }
+    }
+
+    document.getElementById('editForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const albumId = document.getElementById('editAlbumId').value;
+      const btn = document.getElementById('editSaveBtn');
+      btn.disabled = true;
+      try {
+        const body = {};
+        const newTitle = document.getElementById('editTitle').value.trim();
+        const newExpires = document.getElementById('editExpires').value;
+        const newPassword = document.getElementById('editPassword').value;
+        const album = albumsData.find(a => a.id === albumId);
+        if (newTitle && newTitle !== album.title) body.title = newTitle;
+        if (newExpires) body.expiresAt = new Date(newExpires).toISOString();
+        if (newPassword !== (album.password || '')) body.password = newPassword;
+        if (Object.keys(body).length === 0) {
+          showToast('Không có thay đổi nào', 'info');
+          btn.disabled = false;
+          return;
+        }
+        await api(`/api/albums/${albumId}`, { method: 'PUT', body: JSON.stringify(body) });
+        if (body.title) album.title = body.title;
+        if (body.expiresAt) album.expires_at = body.expiresAt;
+        if (typeof body.password !== 'undefined') album.password = body.password || null;
+        renderAlbums();
+        closeEditModal();
+        showToast('Đã cập nhật album!', 'success');
+      } catch (err) { showToast(err.message, 'error'); }
+      finally { btn.disabled = false; }
+    });
+
+    // Navbar mobile toggle
+    window.toggleNavbarMenu = function() {
+      const links = document.getElementById('navbarLinks');
+      const overlay = document.getElementById('navbarOverlay');
+      links.classList.toggle('show');
+      overlay.classList.toggle('show');
+      if (links.classList.contains('show')) {
+        links.querySelectorAll('a').forEach(a => a.addEventListener('click', closeNavbarMenu));
+      }
+    }
+    window.closeNavbarMenu = function() {
+      document.getElementById('navbarLinks').classList.remove('show');
+      document.getElementById('navbarOverlay').classList.remove('show');
+    }
+
+    async function deleteAlbum(id) {
+      if (!confirm('Bạn có chắc muốn xoá album này? Hành động không thể hoàn tác.')) return;
+      try {
+        await api(`/api/albums/${encodeURIComponent(id)}`, { method: 'DELETE' });
+        albumsData = albumsData.filter(a => a.id !== id);
+        if (albumsData.length === 0) {
+          document.getElementById('albumsList').style.display = 'none';
+          document.getElementById('emptyState').style.display = 'block';
+        } else { renderAlbums(); }
+        showToast('Đã xoá album', 'success');
+      } catch (err) { showToast(err.message, 'error'); }
+    }
+
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+  </script>
+</body>
+</html>

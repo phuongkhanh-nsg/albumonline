@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Album - AlbumOnline</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📸</text></svg>">
+</head>
+<body>
+  <nav class="navbar">
+    <a href="/" class="navbar-brand" style="font-size:1.2rem;gap:6px;">
+      <span style="font-size:1.3em;">📸</span> <span>ALBUM NSG</span>
+    </a>
+    <button class="navbar-toggle" aria-label="Mở menu" onclick="toggleNavbarMenu()">☰</button>
+    <div class="navbar-overlay" id="navbarOverlay" onclick="closeNavbarMenu()"></div>
+    <div class="navbar-links" id="navbarLinks">
+      <a href="/">Trang chủ</a>
+      <a href="/create">Tạo Album</a>
+      <a href="/manage">Quản lý</a>
+      <a href="/admin-users" id="adminMenuLink" style="display:none">Quản lý thành viên</a>
+      <a href="/admin-settings" id="adminSettingsLink" style="display:none">Cấu hình</a>
+    </div>
+  </nav>
+  <script src="/js/utils.js"></script>
+  <script>
+    window.toggleNavbarMenu = function() {
+      const links = document.getElementById('navbarLinks');
+      const overlay = document.getElementById('navbarOverlay');
+      links.classList.toggle('show');
+      overlay.classList.toggle('show');
+      if (links.classList.contains('show')) {
+        links.querySelectorAll('a').forEach(a => {
+          a.addEventListener('click', closeNavbarMenu);
+        });
+      }
+    }
+    window.closeNavbarMenu = function() {
+      document.getElementById('navbarLinks').classList.remove('show');
+      document.getElementById('navbarOverlay').classList.remove('show');
+    }
+  </script>
+
+  <!-- Password Protection -->
+  <div id="passwordPage" class="password-page" style="display: none;">
+    <div class="card password-card">
+      <h2>🔒 Album được bảo vệ</h2>
+      <p style="color: var(--text-muted); margin-bottom: 1.5rem;">Vui lòng nhập mật khẩu để xem album</p>
+      <div class="form-group">
+        <label>Mật khẩu</label>
+        <input type="password" class="form-control" id="passwordInput" placeholder="Nhập mật khẩu...">
+      </div>
+      <button class="btn btn-primary" style="width: 100%;" onclick="verifyPassword()">Xác nhận</button>
+    </div>
+  </div>
+
+  <!-- Expired Album -->
+  <div id="expiredPage" class="password-page" style="display: none;">
+    <div class="card password-card" style="text-align: center;">
+      <div style="font-size: 3rem; margin-bottom: 0.5rem;">⏳</div>
+      <h2 style="color: var(--danger, #e53e3e);">Link đã hết hạn</h2>
+      <p style="color: var(--text-muted); margin-bottom: 0.5rem;">Album này đã hết hạn xem vào ngày:</p>
+      <p style="font-weight: 700; font-size: 1.1rem; margin-bottom: 1.5rem;" id="expiredDate"></p>
+      <p style="color: var(--text-muted); margin-bottom: 1.5rem;">Vui lòng liên hệ người đã chia sẻ liên kết này để gia hạn thời gian xem album.</p>
+      <a href="/" class="btn btn-primary" style="width: 100%;">← Về trang chủ</a>
+    </div>
+  </div>
+
+  <!-- Loading -->
+  <div id="loadingState" class="loading-spinner">
+    <div class="spinner"></div>
+  </div>
+
+  <!-- Main Album Content -->
+  <div id="albumContent" class="container" style="display: none; padding-top: 2rem; padding-bottom: 6rem;">
+    <!-- Header -->
+    <div class="gallery-header">
+      <div>
+        <h1 id="albumTitle"></h1>
+        <div class="gallery-info">
+          <span>📷 Số ảnh: <span id="photoCount">0</span></span>
+          <span>👁️ Lượt xem: <span id="viewCount">0</span></span>
+          <span>📅 Ngày tạo: <span id="createdDate"></span></span>
+          <span id="expiresDateWrap" style="display: none;">⏳ Ngày hết hạn: <span id="expiresDate"></span></span>
+        </div>
+      </div>
+      <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+        <button class="btn btn-outline btn-sm" onclick="shareAlbum()">🔗 Chia sẻ</button>
+        <button class="btn btn-outline btn-sm" id="refreshBtn" onclick="refreshAlbum()">🔄 Làm mới</button>
+      </div>
+    </div>
+
+    <!-- Toolbar -->
+    <div class="gallery-toolbar">
+      <button class="btn btn-outline btn-sm" onclick="toggleSelectMode()" id="selectModeBtn">✅ Chế độ chọn ảnh</button>
+      <button class="btn btn-outline btn-sm" onclick="setViewMode('grid')" id="gridBtn">🔲 Lưới</button>
+      <button class="btn btn-outline btn-sm" onclick="setViewMode('large')" id="largeBtn">🖼️ Lớn</button>
+      <button class="btn btn-outline btn-sm" onclick="setViewMode('slide')" id="slideBtn">🎞️ Slide</button>
+      <button class="btn btn-outline btn-sm" id="selectAllBtn" style="display:none;" onclick="toggleSelectAllPhotos()">🗹 Chọn tất cả</button>
+    </div>
+
+    <!-- Client Name (for selection mode) -->
+    <div id="clientNameSection" style="display: none; margin-bottom: 1.5rem;">
+      <div class="card" style="padding: 1rem 1.5rem; display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;">
+        <label style="font-weight: 600; white-space: nowrap;">👤 Tên của bạn:</label>
+  <input type="text" class="form-control" id="clientName" placeholder="Nhập tên..." style="max-width: 100%;" value="">
+        <span id="selectionInfo" style="color: var(--text-muted); font-size: 0.9rem;"></span>
+      </div>
+    </div>
+
+    <!-- Gallery Grid -->
+    <div class="gallery-grid" id="galleryGrid"></div>
+
+    <!-- Empty State -->
+    <div id="emptyState" class="empty-state" style="display: none;">
+      <div class="icon">📭</div>
+      <h3>Chưa có ảnh trong album</h3>
+      <p style="margin-bottom: 1rem;">Album chưa có ảnh. Hãy thử làm mới hoặc đảm bảo bạn đã đăng nhập Google.</p>
+      <button class="btn btn-primary btn-sm" onclick="refreshAlbum()">🔄 Thử làm mới</button>
+    </div>
+  </div>
+
+  <!-- Selection Bar -->
+  <div class="selection-bar" id="selectionBar">
+    <div class="selection-count">
+      Đã chọn: <span id="selectedCount">0</span> ảnh
+      <span id="maxSelectionsHint"></span>
+    </div>
+    <div style="display: flex; gap: 0.5rem;">
+      <button class="btn btn-primary btn-sm" id="downloadSelectedBtn" onclick="downloadSelectedPhotos()" style="display: none;">⬇️ Tải ảnh đã chọn</button>
+      <button class="btn btn-outline btn-sm" onclick="clearSelections()">Bỏ chọn tất cả</button>
+    </div>
+  </div>
+
+  <!-- Lightbox -->
+  <div class="lightbox" id="lightbox">
+    <button class="lightbox-close" onclick="closeLightbox()">✕</button>
+    <button class="lightbox-nav lightbox-prev" onclick="navLightbox(-1)">‹</button>
+    <img id="lightboxImg" src="" alt="">
+    <button class="lightbox-nav lightbox-next" onclick="navLightbox(1)">›</button>
+    <button class="lightbox-download" id="lightboxDownload" onclick="downloadCurrentPhoto()" title="Tải ảnh">⬇</button>
+  </div>
+
+  <!-- Share Modal -->
+  <div class="modal-overlay" id="shareModal">
+    <div class="modal">
+      <h2>🔗 Chia sẻ Album <button class="modal-close" onclick="closeModal('shareModal')">✕</button></h2>
+      <div class="form-group">
+        <label>Link album</label>
+        <div class="copy-link-group">
+          <input type="text" class="form-control" id="shareUrl" readonly>
+          <button class="btn btn-primary btn-sm" onclick="copyToClipboard(document.getElementById('shareUrl').value)">📋 Copy</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="/js/utils.js"></script>
+  <script>
+    const albumId = window.location.pathname.split('/').pop();
+    let album = null;
+    let photos = [];
+    let selectMode = false;
+    let mySelections = new Set();
+    let currentLightboxIndex = -1;
+    let viewMode = 'grid';
+    const clientId = getClientId();
+
+    // Initialize
+    loadAlbum();
+    // Hiển thị nút chọn tất cả khi ở chế độ chọn ảnh
+    document.getElementById('selectModeBtn').addEventListener('click', function() {
+      setTimeout(() => {
+        document.getElementById('selectAllBtn').style.display = selectMode ? '' : 'none';
+      }, 100);
+    });
+
+    function toggleSelectAllPhotos() {
+      if (mySelections.size < photos.length) {
+        // Chọn tất cả
+        photos.forEach(photo => mySelections.add(photo.id));
+      } else {
+        // Bỏ chọn tất cả
+        mySelections.clear();
+      }
+      renderGallery();
+      updateSelectionBar();
+    }
+
+    async function loadAlbum() {
+      try {
+        const data = await api(`/api/albums/${encodeURIComponent(albumId)}`);
+        album = data;
+        photos = data.photos || [];
+
+        document.title = `${album.title} - AlbumOnline`;
+
+        // Check if password protected
+        if (data.password === true) {
+          const verified = sessionStorage.getItem(`album_verified_${albumId}`);
+          if (!verified) {
+            document.getElementById('loadingState').style.display = 'none';
+            document.getElementById('passwordPage').style.display = 'flex';
+            return;
+          }
+        }
+
+        // Load selections
+        try {
+          const selData = await api(`/api/albums/${encodeURIComponent(albumId)}/selections?clientId=${encodeURIComponent(clientId)}`);
+          mySelections = new Set(selData.mySelections);
+        } catch (e) { /* ignore */ }
+
+        showAlbum();
+      } catch (err) {
+        document.getElementById('loadingState').style.display = 'none';
+        // Check if album is expired
+        if (err.status === 410 && err.data && err.data.expired) {
+          document.getElementById('expiredDate').textContent = formatDate(err.data.expires_at);
+          document.getElementById('expiredPage').style.display = 'flex';
+        } else {
+          document.getElementById('loadingState').style.display = 'block';
+          document.getElementById('loadingState').innerHTML = `
+            <div class="empty-state">
+              <div class="icon">😢</div>
+              <h3>${err.message}</h3>
+              <p><a href="/">← Về trang chủ</a></p>
+            </div>`;
+        }
+      }
+    }
+
+    async function verifyPassword() {
+      const pw = document.getElementById('passwordInput').value;
+      try {
+        await api(`/api/albums/${encodeURIComponent(albumId)}/verify`, {
+          method: 'POST',
+          body: JSON.stringify({ password: pw }),
+        });
+        sessionStorage.setItem(`album_verified_${albumId}`, '1');
+        document.getElementById('passwordPage').style.display = 'none';
+        document.getElementById('loadingState').style.display = 'flex';
+        loadAlbum();
+      } catch (err) {
+        showToast('Mật khẩu không đúng!', 'error');
+      }
+    }
+
+    function showAlbum() {
+      document.getElementById('loadingState').style.display = 'none';
+      document.getElementById('albumContent').style.display = 'block';
+
+      document.getElementById('albumTitle').textContent = album.title;
+      document.getElementById('photoCount').textContent = photos.length;
+      document.getElementById('viewCount').textContent = album.view_count || 0;
+      document.getElementById('createdDate').textContent = formatDate(album.created_at);
+
+      // Display expiration date (only if set)
+      const expiresWrap = document.getElementById('expiresDateWrap');
+      const expiresEl = document.getElementById('expiresDate');
+      if (album.expires_at) {
+        const expiresDate = new Date(album.expires_at);
+        const isExpired = expiresDate < new Date();
+        expiresEl.textContent = formatDate(album.expires_at) + (isExpired ? ' (Đã hết hạn)' : '');
+        expiresWrap.style.display = '';
+        if (isExpired) {
+          expiresWrap.style.color = 'var(--danger, #e53e3e)';
+        }
+      }
+
+      if (album.max_selections > 0) {
+        document.getElementById('maxSelectionsHint').textContent = ` / ${album.max_selections}`;
+      }
+
+      renderGallery();
+    }
+
+    function renderGallery() {
+            // Xóa timer cũ nếu có
+            if (window.slideTimer) {
+              clearTimeout(window.slideTimer);
+              window.slideTimer = null;
+            }
+      const grid = document.getElementById('galleryGrid');
+
+      if (photos.length === 0) {
+        grid.style.display = 'none';
+        document.getElementById('emptyState').style.display = 'block';
+        return;
+      }
+
+      document.getElementById('emptyState').style.display = 'none';
+      grid.style.display = 'grid';
+
+      if (viewMode === 'slide') {
+                // Đặt timer tự động chuyển slide sau 6 giây
+                window.slideTimer = setTimeout(() => {
+                  if (viewMode === 'slide') {
+                    changeSlide(1);
+                  }
+                }, 6000);
+        grid.style.display = 'flex';
+        grid.style.gridTemplateColumns = '1fr';
+        let slideIndex = window.slideIndex || 0;
+        if (slideIndex < 0) slideIndex = 0;
+        if (slideIndex >= photos.length) slideIndex = photos.length - 1;
+        window.slideIndex = slideIndex;
+        const photo = photos[slideIndex];
+        const allowDl = album.allow_download;
+        grid.innerHTML = `
+          <div style="width:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;">
+            <div style="display:flex;align-items:center;gap:1rem;justify-content:center;width:100%;">
+              <button class="btn btn-outline btn-sm" onclick="changeSlide(-1)">◀</button>
+              <img src="${photo.full_url}" alt="${photo.name}" style="max-width:90vw;max-height:70vh;border-radius:8px;box-shadow:0 2px 8px #0002;object-fit:contain;" onerror="this.src='https://drive.google.com/thumbnail?id=${photo.drive_file_id}&sz=w800'">
+              <button class="btn btn-outline btn-sm" onclick="changeSlide(1)">▶</button>
+            </div>
+            <div style="margin-top:1rem;text-align:center;width:100%">
+              <span style="font-weight:600;">${photo.name}</span>
+              <span style="color:var(--text-muted);font-size:0.95em;"> (${slideIndex+1}/${photos.length})</span>
+              ${allowDl ? `<button class="btn btn-primary btn-sm" style="margin-left:1rem;" onclick="downloadPhoto('${photo.full_url}', '${photo.name.replace(/'/g, "\\'")}')">⬇️ Tải ảnh</button>` : ''}
+            </div>
+          </div>
+        `;
+      } else {
+        if (viewMode === 'large') {
+          grid.style.gridTemplateColumns = 'repeat(auto-fill, minmax(350px, 1fr))';
+        } else {
+          grid.style.gridTemplateColumns = 'repeat(auto-fill, minmax(220px, 1fr))';
+        }
+        const allowDl = album.allow_download;
+        grid.innerHTML = photos.map((photo, i) => `
+          <div class="photo-card ${mySelections.has(photo.id) ? 'selected' : ''}"
+               data-id="${photo.id}" data-index="${i}"
+               onclick="handlePhotoClick(event, '${photo.id}', ${i})">
+            <img src="${photo.thumbnail_url}" alt="${photo.name}" loading="lazy"
+                 onerror="this.src='https://drive.google.com/thumbnail?id=${photo.drive_file_id}&sz=w400'">
+            <div class="photo-overlay">
+              <span class="photo-name">${photo.name}</span>
+              ${allowDl ? `<button class="photo-download-btn" onclick="event.stopPropagation(); downloadPhoto('${photo.full_url}', '${photo.name.replace(/'/g, "\\'")}')">⬇</button>` : ''}
+            </div>
+            <div class="photo-check">✓</div>
+          </div>
+        `).join('');
+      }
+      updateSelectionBar();
+    }
+
+    function changeSlide(dir) {
+      window.slideIndex = (window.slideIndex || 0) + dir;
+      if (window.slideIndex < 0) window.slideIndex = 0;
+      if (window.slideIndex >= photos.length) window.slideIndex = photos.length - 1;
+      renderGallery();
+    }
+
+    function handlePhotoClick(e, photoId, index) {
+      if (selectMode) {
+        toggleSelection(photoId);
+      } else {
+        openLightbox(index);
+      }
+    }
+
+    // Selection Mode
+    function toggleSelectMode() {
+      selectMode = !selectMode;
+      const btn = document.getElementById('selectModeBtn');
+      btn.style.background = selectMode ? 'var(--primary)' : '';
+      btn.style.color = selectMode ? '#fff' : '';
+      btn.style.borderColor = selectMode ? 'var(--primary)' : '';
+
+      document.getElementById('clientNameSection').style.display = selectMode ? 'block' : 'none';
+
+      // Load saved name
+      const savedName = localStorage.getItem('albumonline_client_name') || '';
+      document.getElementById('clientName').value = savedName;
+
+      updateSelectionBar();
+    }
+
+    async function toggleSelection(photoId) {
+      const isSelected = mySelections.has(photoId);
+      const clientName = document.getElementById('clientName').value.trim() || 'Khách';
+
+      // Save name
+      localStorage.setItem('albumonline_client_name', clientName);
+
+      try {
+        const data = await api(`/api/albums/${encodeURIComponent(albumId)}/select`, {
+          method: 'POST',
+          body: JSON.stringify({
+            photoId,
+            clientId,
+            clientName,
+            selected: !isSelected,
+          }),
+        });
+
+        mySelections = new Set(data.selections);
+        renderGallery();
+      } catch (err) {
+        showToast(err.message, 'error');
+      }
+    }
+
+    function clearSelections() {
+      // Clear one by one
+      const promises = [...mySelections].map(photoId =>
+        api(`/api/albums/${encodeURIComponent(albumId)}/select`, {
+          method: 'POST',
+          body: JSON.stringify({ photoId, clientId, clientName: '', selected: false }),
+        })
+      );
+      Promise.all(promises).then(() => {
+        mySelections.clear();
+        renderGallery();
+        showToast('Đã bỏ chọn tất cả', 'info');
+      });
+    }
+
+    function updateSelectionBar() {
+      const bar = document.getElementById('selectionBar');
+      if (selectMode && mySelections.size > 0) {
+        bar.classList.add('visible');
+      } else {
+        bar.classList.remove('visible');
+      }
+      document.getElementById('selectedCount').textContent = mySelections.size;
+
+      // Show/hide download button
+      const dlBtn = document.getElementById('downloadSelectedBtn');
+      if (dlBtn) {
+        dlBtn.style.display = (album && album.allow_download && mySelections.size > 0) ? '' : 'none';
+      }
+
+      if (album && album.max_selections > 0) {
+        document.getElementById('selectionInfo').textContent =
+          `Đã chọn ${mySelections.size}/${album.max_selections} ảnh`;
+      }
+    }
+
+    // View Mode
+    function setViewMode(mode) {
+      viewMode = mode;
+      document.getElementById('gridBtn').style.background = mode === 'grid' ? 'rgba(229,62,62,0.15)' : '';
+      document.getElementById('gridBtn').style.color = mode === 'grid' ? 'var(--primary)' : '';
+      document.getElementById('largeBtn').style.background = mode === 'large' ? 'rgba(229,62,62,0.15)' : '';
+      document.getElementById('largeBtn').style.color = mode === 'large' ? 'var(--primary)' : '';
+      renderGallery();
+    }
+
+    // Lightbox
+    function openLightbox(index) {
+      currentLightboxIndex = index;
+      const photo = photos[index];
+      const lb = document.getElementById('lightbox');
+      document.getElementById('lightboxImg').src = photo.full_url;
+      lb.classList.add('active');
+      document.body.style.overflow = 'hidden';
+      // Show/hide download button in lightbox
+      const dlBtn = document.getElementById('lightboxDownload');
+      if (dlBtn) dlBtn.style.display = (album && album.allow_download) ? '' : 'none';
+    }
+
+    function closeLightbox() {
+      document.getElementById('lightbox').classList.remove('active');
+      document.body.style.overflow = '';
+    }
+
+    function navLightbox(dir) {
+      currentLightboxIndex = (currentLightboxIndex + dir + photos.length) % photos.length;
+      document.getElementById('lightboxImg').src = photos[currentLightboxIndex].full_url;
+    }
+
+    // Download functions
+    async function downloadPhoto(url, filename) {
+      try {
+        showToast('Đang tải ảnh...', 'info');
+        const response = await fetch(url);
+        const blob = await response.blob();
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = filename || 'photo.jpg';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(a.href);
+      } catch (err) {
+        // Fallback: open in new tab
+        window.open(url, '_blank');
+      }
+    }
+
+    function downloadCurrentPhoto() {
+      if (currentLightboxIndex >= 0 && currentLightboxIndex < photos.length) {
+        const photo = photos[currentLightboxIndex];
+        downloadPhoto(photo.full_url, photo.name);
+      }
+    }
+
+    async function downloadSelectedPhotos() {
+      if (mySelections.size === 0) return;
+      const selectedIds = Array.from(mySelections);
+      try {
+        const res = await fetch(`/api/albums/${albumId}/download-zip`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ photoIds: selectedIds })
+        });
+        if (!res.ok) throw new Error('Không thể tải file zip');
+        const blob = await res.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `album_${albumId}_photos.zip`;
+        document.body.appendChild(a);
+        a.click();
+        setTimeout(() => {
+          window.URL.revokeObjectURL(url);
+          a.remove();
+        }, 100);
+      } catch (e) {
+        showToast('Không thể tải file zip!', 'error');
+      }
+    }
+
+    // Keyboard navigation
+    document.addEventListener('keydown', (e) => {
+      if (document.getElementById('lightbox').classList.contains('active')) {
+        if (e.key === 'Escape') closeLightbox();
+        if (e.key === 'ArrowLeft') navLightbox(-1);
+        if (e.key === 'ArrowRight') navLightbox(1);
+      }
+    });
+
+    // Share
+    function shareAlbum() {
+      document.getElementById('shareUrl').value = window.location.href;
+      document.getElementById('shareModal').classList.add('active');
+    }
+
+    function closeModal(id) {
+      document.getElementById(id).classList.remove('active');
+    }
+
+    // Close modal on overlay click
+    document.getElementById('shareModal').addEventListener('click', (e) => {
+      if (e.target === e.currentTarget) closeModal('shareModal');
+    });
+
+    // Refresh
+    async function refreshAlbum() {
+      const btn = document.getElementById('refreshBtn');
+      btn.disabled = true;
+      btn.textContent = '⏳ Đang làm mới...';
+
+      try {
+        await api(`/api/albums/${encodeURIComponent(albumId)}/refresh`, { method: 'POST' });
+        showToast('Đã làm mới album!', 'success');
+        window.location.reload();
+      } catch (err) {
+        showToast(err.message, 'error');
+        btn.disabled = false;
+        btn.textContent = '🔄 Làm mới';
+      }
+    }
+  </script>
+</body>
+</html>
