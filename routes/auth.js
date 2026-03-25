@@ -1,10 +1,19 @@
 
 const express = require('express');
 const crypto = require('crypto');
-// const { google } = require('googleapis');
+const { google } = require('googleapis');
 const router = express.Router();
 const db = require('../db/database');
 const { createToken, hashPassword, verifyPassword, requireAuth } = require('../middleware/auth');
+
+// Google OAuth helper
+function getGoogleOAuth2Client() {
+  const clientId = process.env.GOOGLE_CLIENT_ID;
+  const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
+  const appUrl = process.env.APP_URL || 'https://album-nsg.vercel.app';
+  if (!clientId || !clientSecret) return null;
+  return new google.auth.OAuth2(clientId, clientSecret, `${appUrl}/api/auth/google/callback`);
+}
 
 // Middleware kiểm tra quyền admin
 function requireAdmin(req, res, next) {
@@ -429,6 +438,104 @@ router.post('/reset-password', async (req, res) => {
   }
 });
 
+
+// ===== GOOGLE OAUTH =====
+
+// GET /api/auth/google — Redirect to Google consent screen
+router.get('/google', (req, res) => {
+  const oauth2Client = getGoogleOAuth2Client();
+  if (!oauth2Client) {
+    return res.redirect('/login?error=google_not_configured');
+  }
+  const url = oauth2Client.generateAuthUrl({
+    access_type: 'offline',
+    prompt: 'consent',
+    scope: [
+      'https://www.googleapis.com/auth/userinfo.profile',
+      'https://www.googleapis.com/auth/userinfo.email',
+    ],
+  });
+  res.redirect(url);
+});
+
+// GET /api/auth/google/callback — Handle Google OAuth callback
+router.get('/google/callback', async (req, res) => {
+  const appUrl = process.env.APP_URL || 'https://album-nsg.vercel.app';
+  try {
+    const { code } = req.query;
+    if (!code) return res.redirect(`${appUrl}/login?error=no_code`);
+
+    const oauth2Client = getGoogleOAuth2Client();
+    if (!oauth2Client) return res.redirect(`${appUrl}/login?error=google_not_configured`);
+
+    // Exchange code for tokens
+    const { tokens } = await oauth2Client.getToken(code);
+    oauth2Client.setCredentials(tokens);
+
+    // Get user info from Google
+    const oauth2 = google.oauth2({ version: 'v2', auth: oauth2Client });
+    const { data: profile } = await oauth2.userinfo.get();
+
+    const googleId = profile.id;
+    const email = (profile.email || '').toLowerCase();
+    const displayName = profile.name || email.split('@')[0];
+    const avatarUrl = profile.picture || '';
+
+    // Check if user with this google_id already exists
+    let user = await db.prepare('SELECT * FROM users WHERE google_id = ?').get(googleId);
+
+    if (!user && email) {
+      // Check if user with same email exists (link Google to existing account)
+      user = await db.prepare('SELECT * FROM users WHERE email = ?').get(email);
+      if (user) {
+        // Link Google account to existing user
+        await db.prepare('UPDATE users SET google_id = ?, avatar_url = COALESCE(avatar_url, ?), google_access_token = ?, google_refresh_token = COALESCE(?, google_refresh_token) WHERE id = ?')
+          .run(googleId, avatarUrl, tokens.access_token || '', tokens.refresh_token || null, user.id);
+        user.google_id = googleId;
+      }
+    }
+
+    if (!user) {
+      // Create new user from Google profile
+      const userId = crypto.randomUUID().substring(0, 12);
+      const username = email.split('@')[0].replace(/[^a-zA-Z0-9_]/g, '_').substring(0, 30).toLowerCase();
+
+      // Ensure username is unique
+      let finalUsername = username;
+      let counter = 1;
+      while (await db.prepare('SELECT id FROM users WHERE username = ?').get(finalUsername)) {
+        finalUsername = `${username.substring(0, 26)}_${counter}`;
+        counter++;
+      }
+
+      await db.prepare(`
+        INSERT INTO users (id, username, email, password_hash, display_name, google_id, google_access_token, google_refresh_token, avatar_url, role)
+        VALUES (?, ?, ?, NULL, ?, ?, ?, ?, ?, 'user')
+      `).run(userId, finalUsername, email, displayName, googleId, tokens.access_token || '', tokens.refresh_token || '', avatarUrl);
+
+      user = { id: userId, username: finalUsername, email, display_name: displayName, role: 'user', google_id: googleId, avatar_url: avatarUrl };
+    } else {
+      // Update tokens for existing user
+      await db.prepare('UPDATE users SET google_access_token = ?, google_refresh_token = COALESCE(?, google_refresh_token), avatar_url = COALESCE(?, avatar_url) WHERE id = ?')
+        .run(tokens.access_token || '', tokens.refresh_token || null, avatarUrl, user.id);
+    }
+
+    // Create JWT token
+    const token = createToken({ id: user.id, username: user.username, role: user.role, email: user.email });
+    const userJson = encodeURIComponent(JSON.stringify({
+      id: user.id,
+      username: user.username,
+      email: user.email,
+      displayName: user.display_name,
+      avatarUrl: user.avatar_url || avatarUrl,
+    }));
+
+    res.redirect(`${appUrl}/login?google_token=${token}&google_user=${userJson}`);
+  } catch (err) {
+    console.error('Google OAuth callback error:', err);
+    res.redirect(`${appUrl}/login?error=oauth_failed`);
+  }
+});
 
 
 module.exports = router;
