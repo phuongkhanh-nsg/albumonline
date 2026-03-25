@@ -10,9 +10,11 @@ const { createToken, hashPassword, verifyPassword, requireAuth } = require('../m
 function getGoogleOAuth2Client() {
   const clientId = process.env.GOOGLE_CLIENT_ID;
   const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
-  const appUrl = process.env.APP_URL || 'https://album-nsg.vercel.app';
+  const appUrl = (process.env.APP_URL || 'https://album-nsg.vercel.app').replace(/\/+$/, '');
   if (!clientId || !clientSecret) return null;
-  return new google.auth.OAuth2(clientId, clientSecret, `${appUrl}/api/auth/google/callback`);
+  const redirectUri = `${appUrl}/api/auth/google/callback`;
+  console.log('Google OAuth redirect_uri:', redirectUri);
+  return new google.auth.OAuth2(clientId, clientSecret, redirectUri);
 }
 
 // Middleware kiểm tra quyền admin
