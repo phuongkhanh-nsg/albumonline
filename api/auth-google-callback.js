@@ -85,6 +85,18 @@ module.exports = async (req, res) => {
       ).run(userId, finalUsername, email, displayName, googleId, tokens.access_token || '', tokens.refresh_token || '', avatarUrl, 'user');
 
       user = { id: userId, username: finalUsername, email, display_name: displayName, role: 'user', avatar_url: avatarUrl };
+
+      // Send registration emails (non-blocking)
+      try {
+        const { sendRegistrationUserEmail, sendRegistrationAdminEmail } = require('../services/emailService');
+        const userInfo = { username: finalUsername, email, displayName, siteUrl: appUrl };
+        Promise.all([
+          sendRegistrationUserEmail(userInfo),
+          sendRegistrationAdminEmail(userInfo),
+        ]).catch(err => console.error('Google registration email error:', err));
+      } catch (e) {
+        console.error('Email service not available:', e.message);
+      }
     } else {
       await db.prepare('UPDATE users SET google_access_token = ?, google_refresh_token = COALESCE(?, google_refresh_token), avatar_url = COALESCE(?, avatar_url) WHERE id = ?')
         .run(tokens.access_token || '', tokens.refresh_token || null, avatarUrl, user.id);
