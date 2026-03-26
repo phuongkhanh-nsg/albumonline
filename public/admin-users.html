@@ -1169,13 +1169,15 @@
         const initial = displayName.charAt(0).toUpperCase();
         const isActive = selectedUserId === uid;
         const roleClass = u.role === 'admin' ? 'role-admin' : 'role-user';
-        const roleIcon = u.role === 'admin' ? '👑' : '👤';
+        const isSuperAdmin = u.email === 'nguyenluyen@nsg.edu.vn';
+        const isGuest = u.id === 'guest_khach' || u.username === 'khach';
+        const roleIcon = isSuperAdmin ? '🔱' : (u.role === 'admin' ? '👑' : (isGuest ? '👤' : '👤'));
         const albumNum = u.albums ? u.albums.length : 0;
 
         html += `<div class="user-item${isActive ? ' active' : ''}" onclick="selectUser('${uid}')" data-uid="${uid}">
           <div class="user-avatar" style="background:${color}">${initial}</div>
           <div class="user-info">
-            <div class="user-name">${displayName}</div>
+            <div class="user-name">${displayName}${isSuperAdmin ? ' <span style="font-size:0.7em;color:var(--gold)">(Super Admin)</span>' : ''}${isGuest ? ' <span style="font-size:0.7em;color:var(--text-muted)">(Guest)</span>' : ''}</div>
             <div class="user-email">${u.email || '—'}</div>
           </div>
           <div class="user-meta">
@@ -1227,6 +1229,12 @@
       albumCurrentPage = 1;
       currentAlbumList = user.albums || [];
       renderAlbumGrid(currentAlbumList);
+
+      // Ẩn nút xóa cho tài khoản được bảo vệ (super admin & guest)
+      const isProtected = user.email === 'nguyenluyen@nsg.edu.vn'
+        || user.id === 'guest_khach' || user.username === 'khach';
+      const deleteBtn = document.querySelector('#userActions .btn-delete');
+      if (deleteBtn) deleteBtn.style.display = isProtected ? 'none' : '';
     }
 
     function filterAlbumList() {
@@ -1411,6 +1419,18 @@
       document.getElementById('editEmail').value = user.email || '';
       document.getElementById('editPassword').value = '';
       document.getElementById('editRole').value = user.role || 'user';
+
+      // Khóa role dropdown cho super admin và guest
+      const roleSelect = document.getElementById('editRole');
+      if (user.email === 'nguyenluyen@nsg.edu.vn') {
+        roleSelect.disabled = true;
+        roleSelect.value = 'admin';
+      } else if (user.id === 'guest_khach' || user.username === 'khach') {
+        roleSelect.disabled = true;
+      } else {
+        roleSelect.disabled = false;
+      }
+
       document.getElementById('editModal').classList.add('active');
     }
 

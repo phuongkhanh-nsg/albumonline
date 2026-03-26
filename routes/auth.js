@@ -53,6 +53,16 @@ router.put('/admin/users/:id', requireAuth, requireAdmin, async (req, res) => {
       return res.status(404).json({ error: 'Không tìm thấy user' });
     }
 
+    // Không cho phép thay đổi role của super admin
+    if (target.email === 'nguyenluyen@nsg.edu.vn' && role && role !== 'admin') {
+      return res.status(403).json({ error: 'Không thể thay đổi quyền của Super Admin' });
+    }
+
+    // Không cho phép thay đổi role của tài khoản guest
+    if ((target.id === 'guest_khach' || target.username === 'khach') && role && role !== target.role) {
+      return res.status(403).json({ error: 'Không thể thay đổi quyền của tài khoản Khách' });
+    }
+
     // Validate email nếu có thay đổi
     if (email) {
       if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
@@ -115,9 +125,19 @@ router.delete('/admin/users/:id', requireAuth, requireAdmin, async (req, res) =>
     }
 
     // Kiểm tra user tồn tại
-    const target = await db.prepare('SELECT id, username FROM users WHERE id = ?').get(targetId);
+    const target = await db.prepare('SELECT id, username, email FROM users WHERE id = ?').get(targetId);
     if (!target) {
       return res.status(404).json({ error: 'Không tìm thấy user' });
+    }
+
+    // Không cho phép xóa tài khoản Super Admin
+    if (target.email === 'nguyenluyen@nsg.edu.vn') {
+      return res.status(403).json({ error: 'Không thể xóa tài khoản Super Admin' });
+    }
+
+    // Không cho phép xóa tài khoản Khách (Guest)
+    if (target.id === 'guest_khach' || target.username === 'khach') {
+      return res.status(403).json({ error: 'Không thể xóa tài khoản Khách (Guest). Tài khoản này dùng để lưu album của khách.' });
     }
 
     // Xóa user (albums sẽ SET NULL theo schema)

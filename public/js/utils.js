@@ -75,26 +75,26 @@ function formatDate(dateStr) {
 
 // Auth helpers
 function getToken() {
-  return localStorage.getItem('albumonline_token');
+  return sessionStorage.getItem('albumonline_token');
 }
 
 function setToken(token) {
-  localStorage.setItem('albumonline_token', token);
+  sessionStorage.setItem('albumonline_token', token);
 }
 
 function removeToken() {
-  localStorage.removeItem('albumonline_token');
-  localStorage.removeItem('albumonline_user');
+  sessionStorage.removeItem('albumonline_token');
+  sessionStorage.removeItem('albumonline_user');
 }
 
 function getUser() {
   try {
-    return JSON.parse(localStorage.getItem('albumonline_user'));
+    return JSON.parse(sessionStorage.getItem('albumonline_user'));
   } catch { return null; }
 }
 
 function setUser(user) {
-  localStorage.setItem('albumonline_user', JSON.stringify(user));
+  sessionStorage.setItem('albumonline_user', JSON.stringify(user));
 }
 
 function isLoggedIn() {
