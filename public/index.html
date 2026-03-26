@@ -1,11 +1,13 @@
 <!DOCTYPE html>
 <html lang="vi">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>AlbumOnline - Chia sẻ Album ảnh từ Google Drive</title>
   <link rel="stylesheet" href="/css/style.css">
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📸</text></svg>">
+  <link rel="icon"
+    href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📸</text></svg>">
 
   <!-- Open Graph thumbnail for social sharing -->
   <meta property="og:image" content="/thumbnail.png">
@@ -15,6 +17,7 @@
   <meta property="og:title" content="Album Online - Lưu giữ khoảnh khắc của bạn">
   <meta property="og:description" content="Chia sẻ album ảnh, lưu giữ kỷ niệm cùng Album Online.">
 </head>
+
 <body>
   <nav class="navbar">
     <a href="/" class="navbar-brand" style="font-size:1.2rem;gap:6px;">
@@ -32,7 +35,7 @@
   </nav>
   <script src="/js/utils.js"></script>
   <script>
-    window.toggleNavbarMenu = function() {
+    window.toggleNavbarMenu = function () {
       const links = document.getElementById('navbarLinks');
       const overlay = document.getElementById('navbarOverlay');
       links.classList.toggle('show');
@@ -43,7 +46,7 @@
         });
       }
     }
-    window.closeNavbarMenu = function() {
+    window.closeNavbarMenu = function () {
       document.getElementById('navbarLinks').classList.remove('show');
       document.getElementById('navbarOverlay').classList.remove('show');
     }
@@ -125,10 +128,12 @@
     </div>
   </section>
 
-    <footer class="footer">
-    <p>© 2026 AlbumOnline - Chia sẻ Album ảnh từ Google Drive - Tùy chỉnh bởi Rồng Con HG</p>
+  <footer class="footer">
+    <p>© 2026 Album NSG - Chia sẻ Album ảnh từ Google Drive - <a href="https://rongcon.net" target="_blank">Tùy chỉnh
+        bởi Rồng Con HG</a></p>
   </footer>
 
   <script src="/js/utils.js"></script>
 </body>
+
 </html>
