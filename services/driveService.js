@@ -41,7 +41,6 @@ async function listDriveImages(folderId, { accessToken, apiKey }) {
     });
     if (pageToken) params.set('pageToken', pageToken);
 
-    const url = `https://www.googleapis.com/drive/v3/files?${params.toString()}`;
     const headers = {};
 
     if (accessToken) {
@@ -51,6 +50,9 @@ async function listDriveImages(folderId, { accessToken, apiKey }) {
     } else {
       throw new Error('Cần Google API Key hoặc đăng nhập Google để truy cập Drive');
     }
+
+    // Build URL AFTER adding auth params
+    const url = `https://www.googleapis.com/drive/v3/files?${params.toString()}`;
 
     const res = await fetch(url, { headers });
     if (!res.ok) {
