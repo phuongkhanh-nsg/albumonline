@@ -78,6 +78,7 @@
       <div>
         <h1 id="albumTitle"></h1>
         <div class="gallery-info">
+          <span id="ownerNameWrap" style="display:none;">👤 Chia sẻ bởi: <strong id="ownerName"></strong></span>
           <span>📷 Số ảnh: <span id="photoCount">0</span></span>
           <span>👁️ Lượt xem: <span id="viewCount">0</span></span>
           <span>📅 Ngày tạo: <span id="createdDate"></span></span>
@@ -254,6 +255,12 @@
       document.getElementById('photoCount').textContent = photos.length;
       document.getElementById('viewCount').textContent = album.view_count || 0;
       document.getElementById('createdDate').textContent = formatDate(album.created_at);
+
+      // Show owner name
+      if (album.owner_name) {
+        document.getElementById('ownerName').textContent = album.owner_name;
+        document.getElementById('ownerNameWrap').style.display = '';
+      }
 
       // Display expiration date (only if set)
       const expiresWrap = document.getElementById('expiresDateWrap');

@@ -153,7 +153,7 @@ router.post('/', optionalAuth, async (req, res) => {
 // Get album info
 router.get('/:id', async (req, res) => {
   try {
-    const album = await db.prepare('SELECT * FROM albums WHERE id = ?').get(req.params.id);
+    const album = await db.prepare('SELECT a.*, u.display_name AS owner_name FROM albums a LEFT JOIN users u ON a.user_id = u.id WHERE a.id = ?').get(req.params.id);
     if (!album) {
       return res.status(404).json({ error: 'Album không tồn tại' });
     }
