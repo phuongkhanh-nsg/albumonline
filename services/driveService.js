@@ -39,27 +39,28 @@ async function listDriveImagesPublic(folderId) {
 
   const html = await res.text();
 
-  // Extract file entries from the embedded folder view
-  // Pattern: data-id="FILE_ID" ... data-target="FILE_URL"
-  const idPattern = /\bdata-id="([a-zA-Z0-9_-]{10,})"/g;
+  // Extract file entries: links are in format /file/d/FILE_ID/view
+  // Also capture filenames from nearby text when possible
+  const filePattern = /\/file\/d\/([a-zA-Z0-9_-]+)\/view/g;
   const fileIds = new Set();
   let match;
-  while ((match = idPattern.exec(html)) !== null) {
+  while ((match = filePattern.exec(html)) !== null) {
     fileIds.add(match[1]);
   }
 
-  // Also try to extract from flip- entries which contain image IDs
-  const flipPattern = /\bflip-entry-id="([a-zA-Z0-9_-]{10,})"/g;
-  while ((match = flipPattern.exec(html)) !== null) {
-    fileIds.add(match[1]);
+  // Also try to extract filenames to pair with IDs
+  // Pattern: [FILENAME](https://drive.google.com/file/d/FILE_ID/view...)
+  const namedFilePattern = /(?:>|"|\])([^<">\[\]]{1,100}\.(?:jpe?g|png|gif|webp|bmp|tiff?|heic))(?:<|"|,|\[).*?\/file\/d\/([a-zA-Z0-9_-]+)\//gi;
+  const fileNameMap = {};
+  while ((match = namedFilePattern.exec(html)) !== null) {
+    fileNameMap[match[2]] = match[1].trim();
   }
 
-  // Also try extracting from various JS data patterns in the page
-  const jsPattern = /\["([a-zA-Z0-9_-]{20,})"(?:,|\])/g;
-  while ((match = jsPattern.exec(html)) !== null) {
-    // Filter to likely file IDs (they're typically 28-44 chars)
-    if (match[1].length >= 20 && match[1].length <= 60) {
-      fileIds.add(match[1]);
+  // Also try reverse pattern: URL first, then filename
+  const reversePattern = /\/file\/d\/([a-zA-Z0-9_-]+)\/[^"<]*?["'>][^<]*?([^/<>"]{1,100}\.(?:jpe?g|png|gif|webp|bmp|tiff?|heic))/gi;
+  while ((match = reversePattern.exec(html)) !== null) {
+    if (!fileNameMap[match[1]]) {
+      fileNameMap[match[1]] = match[2].trim();
     }
   }
 
@@ -68,10 +69,18 @@ async function listDriveImagesPublic(folderId) {
 
   let sortIndex = 0;
   for (const fileId of fileIds) {
+    const name = fileNameMap[fileId] || `image_${sortIndex + 1}.jpg`;
+    // Only include files that look like images (have image extension or no known non-image extension)
+    const ext = name.toLowerCase().split('.').pop();
+    const imageExts = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'tiff', 'tif', 'heic', 'svg'];
+    const nonImageExts = ['mp4', 'mp3', 'avi', 'mov', 'pdf', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'zip', 'rar', 'txt'];
+    
+    if (nonImageExts.includes(ext)) continue; // skip non-image files
+
     images.push({
       id: fileId,
-      name: `image_${sortIndex + 1}.jpg`,
-      mimeType: 'image/jpeg',
+      name: name,
+      mimeType: `image/${ext === 'jpg' ? 'jpeg' : ext}`,
       thumbnailUrl: `https://drive.google.com/thumbnail?id=${fileId}&sz=w400`,
       fullUrl: `https://drive.google.com/thumbnail?id=${fileId}&sz=w1600`,
       width: 0,
