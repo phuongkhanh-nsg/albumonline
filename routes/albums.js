@@ -125,24 +125,22 @@ router.post('/', optionalAuth, async (req, res) => {
         }
       }
     }
-    if (accessToken || apiKey) {
-      try {
-        const images = await listDriveImages(folderId, { accessToken, apiKey });
-        const insertPhoto = db.prepare(`
-          INSERT INTO photos (id, album_id, drive_file_id, name, thumbnail_url, full_url, mime_type, width, height, sort_order)
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        `);
+    try {
+      const images = await listDriveImages(folderId, { accessToken, apiKey });
+      const insertPhoto = db.prepare(`
+        INSERT INTO photos (id, album_id, drive_file_id, name, thumbnail_url, full_url, mime_type, width, height, sort_order)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `);
 
-        for (const [index, photo] of images.entries()) {
-          await insertPhoto.run(
-            crypto.randomUUID(), albumId, photo.id, photo.name,
-            photo.thumbnailUrl, photo.fullUrl, photo.mimeType,
-            photo.width, photo.height, index
-          );
-        }
-      } catch (err) {
-        console.log('Could not fetch Drive images:', err.message);
+      for (const [index, photo] of images.entries()) {
+        await insertPhoto.run(
+          crypto.randomUUID(), albumId, photo.id, photo.name,
+          photo.thumbnailUrl, photo.fullUrl, photo.mimeType,
+          photo.width, photo.height, index
+        );
       }
+    } catch (err) {
+      console.log('Could not fetch Drive images:', err.message);
     }
 
     res.json({ success: true, albumId, shareLink: `/album/${albumId}` });
@@ -222,9 +220,7 @@ router.post('/:id/refresh', async (req, res) => {
         }
       }
     }
-    if (!accessToken && !apiKey) {
-      return res.status(400).json({ error: 'Cần đăng nhập Google hoặc cấu hình API Key để truy cập Drive' });
-    }
+    // listDriveImages now handles no-auth case with public folder fallback
 
     const images = await listDriveImages(album.drive_folder_id, { accessToken, apiKey });
 
