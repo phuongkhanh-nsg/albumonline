@@ -140,10 +140,13 @@ router.delete('/admin/users/:id', requireAuth, requireAdmin, async (req, res) =>
       return res.status(403).json({ error: 'Không thể xóa tài khoản Khách (Guest). Tài khoản này dùng để lưu album của khách.' });
     }
 
-    // Xóa user (albums sẽ SET NULL theo schema)
+    // Chuyển tất cả album của user sang tài khoản Khách trước khi xóa
+    await db.prepare("UPDATE albums SET user_id = 'guest_khach' WHERE user_id = ?").run(targetId);
+
+    // Xóa user
     await db.prepare('DELETE FROM users WHERE id = ?').run(targetId);
 
-    res.json({ success: true, message: `Đã xóa user ${target.username}` });
+    res.json({ success: true, message: `Đã xóa user ${target.username}. Album đã chuyển sang tài khoản Khách.` });
   } catch (err) {
     console.error('Admin delete user error:', err);
     res.status(500).json({ error: 'Có lỗi xảy ra khi xóa user' });

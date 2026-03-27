@@ -1,6 +1,10 @@
 const nodemailer = require('nodemailer');
 const db = require('../db/database');
 
+// Cached transporter for speed
+let cachedTransporter = null;
+let cachedSettingsHash = null;
+
 // Get SMTP settings from database
 async function getSmtpSettings() {
   const keys = ['smtp_host', 'smtp_port', 'smtp_user', 'smtp_pass', 'smtp_from'];
@@ -23,23 +27,40 @@ async function saveSmtpSettings(settings) {
       await db.prepare(insertSql).run(key, value || null);
     }
   }
+  // Invalidate cached transporter when settings change
+  cachedTransporter = null;
+  cachedSettingsHash = null;
 }
 
-// Create transporter from DB settings
+// Create transporter from DB settings (cached with connection pooling)
 async function createTransporter() {
   const settings = await getSmtpSettings();
   if (!settings.smtp_host || !settings.smtp_user || !settings.smtp_pass) {
     throw new Error('Chưa cấu hình email SMTP. Vui lòng liên hệ admin.');
   }
-  return nodemailer.createTransport({
+
+  // Check if cached transporter is still valid
+  const hash = JSON.stringify([settings.smtp_host, settings.smtp_port, settings.smtp_user, settings.smtp_pass]);
+  if (cachedTransporter && cachedSettingsHash === hash) {
+    return cachedTransporter;
+  }
+
+  cachedTransporter = nodemailer.createTransport({
     host: settings.smtp_host,
     port: parseInt(settings.smtp_port) || 587,
     secure: parseInt(settings.smtp_port) === 465,
+    pool: true,
+    maxConnections: 3,
+    maxMessages: 50,
+    greetingTimeout: 10000,
+    socketTimeout: 30000,
     auth: {
       user: settings.smtp_user,
       pass: settings.smtp_pass,
     },
   });
+  cachedSettingsHash = hash;
+  return cachedTransporter;
 }
 
 // Send password reset OTP

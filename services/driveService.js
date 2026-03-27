@@ -62,12 +62,17 @@ async function listDriveImages(folderId, { accessToken, apiKey }) {
     const data = await res.json();
 
     for (const file of data.files || []) {
+      // Use thumbnailLink from API when available, fallback to drive.google.com/thumbnail
+      const thumb = file.thumbnailLink
+        ? file.thumbnailLink.replace(/=s\d+/, '=s400')
+        : `https://drive.google.com/thumbnail?id=${file.id}&sz=w400`;
+      const full = `https://drive.google.com/thumbnail?id=${file.id}&sz=w1600`;
       images.push({
         id: file.id,
         name: file.name,
         mimeType: file.mimeType,
-        thumbnailUrl: `https://lh3.googleusercontent.com/d/${file.id}=w400`,
-        fullUrl: `https://lh3.googleusercontent.com/d/${file.id}=w1600`,
+        thumbnailUrl: thumb,
+        fullUrl: full,
         width: file.imageMediaMetadata?.width || 0,
         height: file.imageMediaMetadata?.height || 0,
       });

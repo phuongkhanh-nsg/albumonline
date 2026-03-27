@@ -26,7 +26,7 @@ app.get('/album/:id', async (req, res) => {
     if (album) {
       const firstPhoto = await db.prepare('SELECT * FROM photos WHERE album_id = ? ORDER BY sort_order LIMIT 1').get(album.id);
       const ogImage = firstPhoto
-        ? `https://lh3.googleusercontent.com/d/${firstPhoto.drive_file_id}=w800`
+        ? `https://drive.google.com/thumbnail?id=${firstPhoto.drive_file_id}&sz=w800`
         : '';
       const ogTitle = album.title || 'Album Online';
       const ogDesc = `📸 Album ảnh: ${ogTitle} - Xem và chọn ảnh trực tuyến`;
