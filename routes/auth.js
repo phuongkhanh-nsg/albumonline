@@ -192,14 +192,16 @@ router.post('/register', async (req, res) => {
     const token = createToken({ id: userId, username: username.toLowerCase(), role: 'user', email: email.toLowerCase() });
 
     // Gửi email thông báo đăng ký (không block response)
-    const siteUrl = `${req.protocol}://${req.get('host')}`;
+    const siteUrl = (process.env.APP_URL || `${req.protocol}://${req.get('host')}`).replace(/\/+$/, '');
     const userInfo = { username: username.toLowerCase(), email: email.toLowerCase(), displayName: displayName || username, siteUrl };
     try {
       const { sendRegistrationUserEmail, sendRegistrationAdminEmail } = require('../services/emailService');
-      Promise.all([
-        sendRegistrationUserEmail(userInfo),
-        sendRegistrationAdminEmail(userInfo),
-      ]).catch(err => console.error('Registration email error:', err));
+      sendRegistrationUserEmail(userInfo)
+        .then(() => console.log('Registration user email sent to', email))
+        .catch(err => console.error('Registration user email error:', err.message));
+      sendRegistrationAdminEmail(userInfo)
+        .then(() => console.log('Registration admin email sent'))
+        .catch(err => console.error('Registration admin email error:', err.message));
     } catch (e) {
       console.error('Email service not available:', e.message);
     }
@@ -551,6 +553,21 @@ router.get('/google/callback', async (req, res) => {
       `).run(userId, finalUsername, email, displayName, googleId, tokens.access_token || '', tokens.refresh_token || '', avatarUrl);
 
       user = { id: userId, username: finalUsername, email, display_name: displayName, role: 'user', google_id: googleId, avatar_url: avatarUrl };
+
+      // Gửi email thông báo đăng ký cho user mới từ Google
+      try {
+        const { sendRegistrationUserEmail, sendRegistrationAdminEmail } = require('../services/emailService');
+        const siteUrl = (process.env.APP_URL || appUrl).replace(/\/+$/, '');
+        const userInfo = { username: finalUsername, email, displayName, siteUrl };
+        sendRegistrationUserEmail(userInfo)
+          .then(() => console.log('Google registration user email sent to', email))
+          .catch(err => console.error('Google registration user email error:', err.message));
+        sendRegistrationAdminEmail(userInfo)
+          .then(() => console.log('Google registration admin email sent'))
+          .catch(err => console.error('Google registration admin email error:', err.message));
+      } catch (e) {
+        console.error('Email service not available for Google registration:', e.message);
+      }
     } else {
       await db.prepare('UPDATE users SET google_access_token = ?, google_refresh_token = COALESCE(?, google_refresh_token), avatar_url = COALESCE(?, avatar_url) WHERE id = ?')
         .run(tokens.access_token || '', tokens.refresh_token || null, avatarUrl, user.id);
