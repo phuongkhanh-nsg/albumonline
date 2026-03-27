@@ -114,7 +114,6 @@ a:hover {
 .navbar-brand span {
   background: linear-gradient(135deg, var(--primary), #ff6b6b);
   -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
 }
 
 .navbar-links {
