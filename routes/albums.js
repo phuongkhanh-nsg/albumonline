@@ -83,7 +83,7 @@ router.post('/:id/download-zip', async (req, res) => {
 // Create a new album
 router.post('/', optionalAuth, async (req, res) => {
   try {
-    const { title, driveLink, password, maxSelections, allowDownload, expiresInDays } = req.body;
+    const { title, driveLink, password, maxSelections, allowDownload, expiresInDays, expiresAt } = req.body;
 
     if (!title || !driveLink) {
       return res.status(400).json({ error: 'Tiêu đề và link Google Drive là bắt buộc' });
@@ -96,14 +96,17 @@ router.post('/', optionalAuth, async (req, res) => {
 
     const albumId = crypto.randomUUID().substring(0, 8);
     const userId = req.user ? req.user.id : 'guest_khach';
-    const expiresAt = expiresInDays
-      ? new Date(Date.now() + expiresInDays * 86400000).toISOString()
-      : null;
+    let computedExpiresAt = null;
+    if (expiresAt) {
+      computedExpiresAt = new Date(expiresAt).toISOString();
+    } else if (expiresInDays) {
+      computedExpiresAt = new Date(Date.now() + expiresInDays * 86400000).toISOString();
+    }
 
     await db.prepare(`
       INSERT INTO albums (id, user_id, title, drive_folder_id, drive_link, password, max_selections, allow_download, expires_at)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `).run(albumId, userId, title, folderId, driveLink, password || null, maxSelections || 0, allowDownload !== false ? 1 : 0, expiresAt);
+    `).run(albumId, userId, title, folderId, driveLink, password || null, maxSelections || 0, allowDownload !== false ? 1 : 0, computedExpiresAt);
 
     // Try to fetch images from Drive
     const apiKey = process.env.GOOGLE_API_KEY;

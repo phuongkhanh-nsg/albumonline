@@ -74,14 +74,17 @@
         <div class="form-row">
           <div class="form-group">
             <label>⏰ Thời hạn album</label>
-            <select class="form-control" id="expiresInDays">
+            <select class="form-control" id="expiresInDays" onchange="toggleCustomExpiry()">
               <option value="0">Không hết hạn</option>
               <option value="5">5 ngày</option>
               <option value="7">7 ngày</option>
               <option value="15">15 ngày</option>
               <option value="30">30 ngày</option>
               <option value="90">90 ngày</option>
+              <option value="custom">📅 Tùy chọn ngày...</option>
             </select>
+            <input type="datetime-local" class="form-control" id="customExpiryDate" style="display:none; margin-top:0.5rem;">
+            <small id="customExpiryHint" style="display:none; color:var(--text-muted); font-size:0.8rem;">Chọn ngày và giờ hết hạn cho album</small>
           </div>
           <div class="form-group">
             <label>&nbsp;</label>
@@ -128,23 +131,50 @@
     const submitBtn = document.getElementById('submitBtn');
     const resultSection = document.getElementById('resultSection');
 
+    function toggleCustomExpiry() {
+      const val = document.getElementById('expiresInDays').value;
+      const dateInput = document.getElementById('customExpiryDate');
+      const hint = document.getElementById('customExpiryHint');
+      if (val === 'custom') {
+        dateInput.style.display = 'block';
+        hint.style.display = 'block';
+        // Set min date to now
+        const now = new Date();
+        now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+        dateInput.min = now.toISOString().slice(0, 16);
+      } else {
+        dateInput.style.display = 'none';
+        hint.style.display = 'none';
+        dateInput.value = '';
+      }
+    }
+
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
       submitBtn.disabled = true;
       submitBtn.textContent = '⏳ Đang tạo album...';
 
       try {
-        const data = await api('/api/albums', {
-          method: 'POST',
-          body: JSON.stringify({
-            title: document.getElementById('albumTitle').value.trim(),
-            driveLink: document.getElementById('driveLink').value.trim(),
-            password: document.getElementById('albumPassword').value.trim() || null,
-            maxSelections: parseInt(document.getElementById('maxSelections').value) || 0,
-            allowDownload: document.getElementById('allowDownload').checked,
-            expiresInDays: parseInt(document.getElementById('expiresInDays').value) || 0,
-          }),
-        });
+            const expiresSelect = document.getElementById('expiresInDays').value;
+            const body = {
+              title: document.getElementById('albumTitle').value.trim(),
+              driveLink: document.getElementById('driveLink').value.trim(),
+              password: document.getElementById('albumPassword').value.trim() || null,
+              maxSelections: parseInt(document.getElementById('maxSelections').value) || 0,
+              allowDownload: document.getElementById('allowDownload').checked,
+            };
+            if (expiresSelect === 'custom') {
+              const customDate = document.getElementById('customExpiryDate').value;
+              if (customDate) {
+                body.expiresAt = new Date(customDate).toISOString();
+              }
+            } else {
+              body.expiresInDays = parseInt(expiresSelect) || 0;
+            }
+            const data = await api('/api/albums', {
+              method: 'POST',
+              body: JSON.stringify(body),
+            });
 
         const fullLink = window.location.origin + data.shareLink;
         document.getElementById('shareLink').value = fullLink;
