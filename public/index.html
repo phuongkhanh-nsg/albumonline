@@ -35,21 +35,6 @@
   </nav>
   <script src="/js/utils.js"></script>
   <script>
-    window.toggleNavbarMenu = function () {
-      const links = document.getElementById('navbarLinks');
-      const overlay = document.getElementById('navbarOverlay');
-      links.classList.toggle('show');
-      overlay.classList.toggle('show');
-      if (links.classList.contains('show')) {
-        links.querySelectorAll('a').forEach(a => {
-          a.addEventListener('click', closeNavbarMenu);
-        });
-      }
-    }
-    window.closeNavbarMenu = function () {
-      document.getElementById('navbarLinks').classList.remove('show');
-      document.getElementById('navbarOverlay').classList.remove('show');
-    }
     document.addEventListener('DOMContentLoaded', showAdminMenuLink);
   </script>
 

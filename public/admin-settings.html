@@ -6,22 +6,7 @@
   <title>Cấu hình Email - AlbumOnline</title>
   <link rel="stylesheet" href="/css/style.css">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📸</text></svg>">
-  <style>
-    .settings-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
-    @media (max-width: 600px) { .settings-grid { grid-template-columns: 1fr; } }
-    .preset-btn {
-      padding: 8px 16px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg-input);
-      color: var(--text); cursor: pointer; font-size: 0.85rem; transition: all 0.2s;
-    }
-    .preset-btn:hover { border-color: var(--primary); color: var(--primary); }
-    .preset-btn.active { border-color: var(--primary); background: rgba(229,62,62,0.1); color: var(--primary); }
-    .status-badge {
-      display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px;
-      border-radius: 20px; font-size: 0.85rem; font-weight: 600;
-    }
-    .status-badge.configured { background: rgba(72,187,120,0.15); color: var(--success); }
-    .status-badge.not-configured { background: rgba(237,137,54,0.15); color: var(--warning); }
-  </style>
+  <link rel="stylesheet" href="/css/admin.css">
 </head>
 <body>
   <nav class="navbar">
@@ -38,16 +23,6 @@
       <a href="/admin-settings" id="adminSettingsLink" class="active" style="display:none">Cấu hình</a>
     </div>
   </nav>
-  <script>
-    window.toggleNavbarMenu = function() {
-      document.getElementById('navbarLinks').classList.toggle('show');
-      document.getElementById('navbarOverlay').classList.toggle('show');
-    }
-    window.closeNavbarMenu = function() {
-      document.getElementById('navbarLinks').classList.remove('show');
-      document.getElementById('navbarOverlay').classList.remove('show');
-    }
-  </script>
 
   <div class="container" style="padding-top: 3rem; padding-bottom: 3rem;">
     <div class="section-title">

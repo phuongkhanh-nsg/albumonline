@@ -187,6 +187,33 @@ function escapeHtmlUtil(text) {
   return div.innerHTML;
 }
 
+// Navbar mobile toggle — shared across all pages
+window.toggleNavbarMenu = function () {
+  const links = document.getElementById('navbarLinks');
+  const overlay = document.getElementById('navbarOverlay');
+  if (!links) return;
+  links.classList.toggle('show');
+  if (overlay) overlay.classList.toggle('show');
+  if (links.classList.contains('show')) {
+    links.querySelectorAll('a').forEach(a => {
+      a.addEventListener('click', closeNavbarMenu);
+    });
+  }
+};
+window.closeNavbarMenu = function () {
+  const links = document.getElementById('navbarLinks');
+  const overlay = document.getElementById('navbarOverlay');
+  if (links) links.classList.remove('show');
+  if (overlay) overlay.classList.remove('show');
+};
+
+// Shared escapeHtml utility
+function escapeHtml(text) {
+  const div = document.createElement('div');
+  div.textContent = text;
+  return div.innerHTML;
+}
+
 // Auto-update navbar on load
 document.addEventListener('DOMContentLoaded', updateNavbar);
 

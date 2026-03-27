@@ -6,120 +6,7 @@
   <title>Quản lý Album - AlbumOnline</title>
   <link rel="stylesheet" href="/css/style.css">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📸</text></svg>">
-  <style>
-    .edit-modal-overlay {
-      display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-      background: rgba(0,0,0,0.7); z-index: 500; align-items: center; justify-content: center; padding: 1rem;
-    }
-    .edit-modal-overlay.active { display: flex; }
-    .edit-modal {
-      background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius);
-      padding: 2rem; max-width: 500px; width: 100%; max-height: 90vh; overflow-y: auto;
-    }
-    .edit-modal h2 { margin-bottom: 1.5rem; display: flex; align-items: center; gap: 10px; }
-    .edit-modal-close { margin-left: auto; background: none; border: none; color: var(--text-muted); font-size: 1.5rem; cursor: pointer; }
-
-    .pagination {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 0.4rem;
-      padding: 1.5rem 0;
-      flex-wrap: wrap;
-    }
-    .pagination button {
-      padding: 8px 14px;
-      background: var(--bg-card);
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      color: var(--text-muted);
-      font-size: 0.85rem;
-      cursor: pointer;
-      transition: all 0.2s;
-    }
-    .pagination button:hover {
-      background: rgba(229,62,62,0.1);
-      border-color: var(--primary);
-      color: var(--text);
-    }
-    .pagination button.active {
-      background: var(--primary);
-      border-color: var(--primary);
-      color: #fff;
-      font-weight: 700;
-    }
-    .pagination button:disabled {
-      opacity: 0.3;
-      cursor: not-allowed;
-    }
-    .pagination .page-info {
-      font-size: 0.8rem;
-      color: var(--text-muted);
-      padding: 0 0.5rem;
-    }
-
-    /* Small action buttons (matching admin-users style) */
-    .album-card-actions {
-      display: flex;
-      gap: 0.4rem;
-      margin-top: 0.5rem;
-      flex-wrap: wrap;
-    }
-    .btn-action {
-      display: inline-flex;
-      align-items: center;
-      gap: 4px;
-      padding: 5px 10px;
-      border-radius: 6px;
-      font-size: 0.72rem;
-      font-weight: 600;
-      cursor: pointer;
-      border: 1px solid transparent;
-      transition: all 0.2s ease;
-      white-space: nowrap;
-      text-decoration: none;
-    }
-    .btn-view {
-      background: rgba(72, 187, 120, 0.1);
-      color: #68d391;
-      border-color: rgba(72, 187, 120, 0.25);
-    }
-    .btn-view:hover {
-      background: rgba(72, 187, 120, 0.2);
-      border-color: #68d391;
-      transform: translateY(-1px);
-    }
-    .btn-edit-action {
-      background: rgba(214, 158, 46, 0.1);
-      color: #ecc94b;
-      border-color: rgba(214, 158, 46, 0.25);
-    }
-    .btn-edit-action:hover {
-      background: rgba(214, 158, 46, 0.2);
-      border-color: #ecc94b;
-      transform: translateY(-1px);
-    }
-    .btn-link-action {
-      background: rgba(49, 130, 206, 0.1);
-      color: #63b3ed;
-      border-color: rgba(49, 130, 206, 0.25);
-    }
-    .btn-link-action:hover {
-      background: rgba(49, 130, 206, 0.2);
-      border-color: #63b3ed;
-      transform: translateY(-1px);
-    }
-    .btn-delete-action {
-      background: rgba(229, 62, 62, 0.1);
-      color: #fc8181;
-      border-color: rgba(229, 62, 62, 0.25);
-    }
-    .btn-delete-action:hover {
-      background: rgba(229, 62, 62, 0.2);
-      border-color: #fc8181;
-      transform: translateY(-1px);
-    }
-  </style>
+  <link rel="stylesheet" href="/css/admin.css">
 </head>
 <body>
   <nav class="navbar">
@@ -278,7 +165,7 @@
         ${pageAlbums.map(album => `
           <div class="album-card" id="album-${album.id}">
             <div class="album-card-cover" style="text-align:center; margin-bottom:8px; height:120px; display:flex; align-items:center; justify-content:center; background:#222; border-radius:8px; overflow:hidden;">
-              ${album.cover_photo ? `<img src="${album.cover_photo}" alt="cover" style="width:auto; max-width:100%; object-fit:cover; display:block; margin:auto; background:#222;" onerror="this.onerror=null;this.src='/avatar.png';">` : '<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:#888;">Không có ảnh</div>'}
+              ${album.cover_photo ? `<img src="${album.cover_photo}" alt="cover" style="width:auto; max-width:100%; object-fit:cover; display:block; margin:auto; background:#222;" onerror="this.onerror=null;this.outerHTML='<div style=\\'width:100%;height:160px;display:flex;align-items:center;justify-content:center;color:#888;background:#1a1a2e;\\'>Ảnh lỗi</div>';">` : '<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:#888;">Không có ảnh</div>'}
             </div>
             <div class="album-card-body">
               <h3>${escapeHtml(album.title)}</h3>
@@ -412,21 +299,6 @@
       finally { btn.disabled = false; }
     });
 
-    // Navbar mobile toggle
-    window.toggleNavbarMenu = function() {
-      const links = document.getElementById('navbarLinks');
-      const overlay = document.getElementById('navbarOverlay');
-      links.classList.toggle('show');
-      overlay.classList.toggle('show');
-      if (links.classList.contains('show')) {
-        links.querySelectorAll('a').forEach(a => a.addEventListener('click', closeNavbarMenu));
-      }
-    }
-    window.closeNavbarMenu = function() {
-      document.getElementById('navbarLinks').classList.remove('show');
-      document.getElementById('navbarOverlay').classList.remove('show');
-    }
-
     async function deleteAlbum(id) {
       if (!confirm('Bạn có chắc muốn xoá album này? Hành động không thể hoàn tác.')) return;
       try {
@@ -438,12 +310,6 @@
         } else { renderAlbums(); }
         showToast('Đã xoá album', 'success');
       } catch (err) { showToast(err.message, 'error'); }
-    }
-
-    function escapeHtml(text) {
-      const div = document.createElement('div');
-      div.textContent = text;
-      return div.innerHTML;
     }
   </script>
 </body>
