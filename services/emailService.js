@@ -1,18 +1,21 @@
 const nodemailer = require('nodemailer');
 const db = require('../db/database');
 
-// Cached transporter for speed
+// Cached transporter and settings for speed
 let cachedTransporter = null;
+let cachedSettings = null;
 let cachedSettingsHash = null;
 
-// Get SMTP settings from database
+// Get SMTP settings from database (cached)
 async function getSmtpSettings() {
-  const keys = ['smtp_host', 'smtp_port', 'smtp_user', 'smtp_pass', 'smtp_from'];
+  if (cachedSettings) return cachedSettings;
+  // Single query to get all settings at once
+  const rows = await db.prepare("SELECT key, value FROM settings WHERE key IN ('smtp_host', 'smtp_port', 'smtp_user', 'smtp_pass', 'smtp_from')").all();
   const settings = {};
-  for (const key of keys) {
-    const row = await db.prepare('SELECT value FROM settings WHERE key = ?').get(key);
-    settings[key] = row ? row.value : null;
+  for (const row of (rows || [])) {
+    settings[row.key] = row.value;
   }
+  cachedSettings = settings;
   return settings;
 }
 
@@ -27,51 +30,48 @@ async function saveSmtpSettings(settings) {
       await db.prepare(insertSql).run(key, value || null);
     }
   }
-  // Invalidate cached transporter when settings change
+  // Invalidate all caches when settings change
   cachedTransporter = null;
+  cachedSettings = null;
   cachedSettingsHash = null;
 }
 
-// Create transporter from DB settings (cached with connection pooling)
-async function createTransporter() {
+// Get transporter + settings in one call (fast, cached)
+async function getMailer() {
   const settings = await getSmtpSettings();
   if (!settings.smtp_host || !settings.smtp_user || !settings.smtp_pass) {
     throw new Error('Chưa cấu hình email SMTP. Vui lòng liên hệ admin.');
   }
 
-  // Check if cached transporter is still valid
-  const hash = JSON.stringify([settings.smtp_host, settings.smtp_port, settings.smtp_user, settings.smtp_pass]);
-  if (cachedTransporter && cachedSettingsHash === hash) {
-    return cachedTransporter;
+  const hash = settings.smtp_host + settings.smtp_port + settings.smtp_user + settings.smtp_pass;
+  if (!cachedTransporter || cachedSettingsHash !== hash) {
+    cachedTransporter = nodemailer.createTransport({
+      host: settings.smtp_host,
+      port: parseInt(settings.smtp_port) || 587,
+      secure: parseInt(settings.smtp_port) === 465,
+      pool: true,
+      maxConnections: 5,
+      maxMessages: 100,
+      greetingTimeout: 10000,
+      socketTimeout: 30000,
+      auth: {
+        user: settings.smtp_user,
+        pass: settings.smtp_pass,
+      },
+    });
+    cachedSettingsHash = hash;
   }
 
-  cachedTransporter = nodemailer.createTransport({
-    host: settings.smtp_host,
-    port: parseInt(settings.smtp_port) || 587,
-    secure: parseInt(settings.smtp_port) === 465,
-    pool: true,
-    maxConnections: 3,
-    maxMessages: 50,
-    greetingTimeout: 10000,
-    socketTimeout: 30000,
-    auth: {
-      user: settings.smtp_user,
-      pass: settings.smtp_pass,
-    },
-  });
-  cachedSettingsHash = hash;
-  return cachedTransporter;
+  const fromName = settings.smtp_from || 'AlbumOnline';
+  const from = `"${fromName}" <${settings.smtp_user}>`;
+  return { transporter: cachedTransporter, from };
 }
 
 // Send password reset OTP
 async function sendResetOTP(email, otp) {
-  const transporter = await createTransporter();
-  const settings = await getSmtpSettings();
-  const fromName = settings.smtp_from || 'AlbumOnline';
-
+  const { transporter, from } = await getMailer();
   await transporter.sendMail({
-    from: `"${fromName}" <${settings.smtp_user}>`,
-    to: email,
+    from, to: email,
     subject: '🔑 Mã OTP đặt lại mật khẩu - AlbumOnline',
     html: `
       <div style="font-family: 'Segoe UI', Arial, sans-serif; max-width: 480px; margin: 0 auto; background: #1a1a2e; color: #e2e8f0; border-radius: 16px; overflow: hidden; border: 1px solid #2d3748;">
@@ -98,13 +98,9 @@ async function sendResetOTP(email, otp) {
 
 // Send test email
 async function sendTestEmail(toEmail) {
-  const transporter = await createTransporter();
-  const settings = await getSmtpSettings();
-  const fromName = settings.smtp_from || 'AlbumOnline';
-
+  const { transporter, from } = await getMailer();
   await transporter.sendMail({
-    from: `"${fromName}" <${settings.smtp_user}>`,
-    to: toEmail,
+    from, to: toEmail,
     subject: '✅ Test Email - AlbumOnline',
     html: `
       <div style="font-family: 'Segoe UI', Arial, sans-serif; max-width: 480px; margin: 0 auto; background: #1a1a2e; color: #e2e8f0; border-radius: 16px; overflow: hidden; border: 1px solid #2d3748;">
@@ -122,15 +118,12 @@ async function sendTestEmail(toEmail) {
 
 // Send registration success email to user
 async function sendRegistrationUserEmail({ username, email, displayName, siteUrl }) {
-  const transporter = await createTransporter();
-  const settings = await getSmtpSettings();
-  const fromName = settings.smtp_from || 'AlbumOnline';
+  const { transporter, from } = await getMailer();
   const now = new Date().toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' });
   const loginUrl = siteUrl ? `${siteUrl}/login` : '/login';
 
   await transporter.sendMail({
-    from: `"${fromName}" <${settings.smtp_user}>`,
-    to: email,
+    from, to: email,
     subject: '🎉 Chào mừng bạn đến với AlbumOnline!',
     html: `
       <div style="font-family: 'Segoe UI', Arial, sans-serif; max-width: 480px; margin: 0 auto; background: #1a1a2e; color: #e2e8f0; border-radius: 16px; overflow: hidden; border: 1px solid #2d3748;">
@@ -177,9 +170,7 @@ async function sendRegistrationUserEmail({ username, email, displayName, siteUrl
 
 // Send registration notification email to all admins
 async function sendRegistrationAdminEmail({ username, email, displayName }) {
-  const transporter = await createTransporter();
-  const settings = await getSmtpSettings();
-  const fromName = settings.smtp_from || 'AlbumOnline';
+  const { transporter, from } = await getMailer();
   const now = new Date().toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' });
 
   // Get all admin emails
@@ -190,8 +181,7 @@ async function sendRegistrationAdminEmail({ username, email, displayName }) {
   if (adminEmails.length === 0) return;
 
   await transporter.sendMail({
-    from: `"${fromName}" <${settings.smtp_user}>`,
-    to: adminEmails.join(', '),
+    from, to: adminEmails.join(', '),
     subject: `👤 Thành viên mới đăng ký: ${username} - AlbumOnline`,
     html: `
       <div style="font-family: 'Segoe UI', Arial, sans-serif; max-width: 480px; margin: 0 auto; background: #1a1a2e; color: #e2e8f0; border-radius: 16px; overflow: hidden; border: 1px solid #2d3748;">
