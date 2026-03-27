@@ -73,28 +73,57 @@ function formatDate(dateStr) {
   return d.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' });
 }
 
-// Auth helpers
+// Auth helpers — use localStorage (shared across tabs) with inactivity timeout
+const SESSION_TIMEOUT = 5 * 60 * 1000; // 5 minutes
+
 function getToken() {
-  return sessionStorage.getItem('albumonline_token');
+  const token = localStorage.getItem('albumonline_token');
+  if (!token) return null;
+
+  // Check if session has expired (browser was closed for > 5 minutes)
+  const lastActivity = parseInt(localStorage.getItem('albumonline_last_activity') || '0');
+  const closeTime = parseInt(localStorage.getItem('albumonline_close_time') || '0');
+
+  if (closeTime > 0 && lastActivity > 0) {
+    // Browser was closed, check how long it was closed
+    const now = Date.now();
+    const closedDuration = now - closeTime;
+    if (closedDuration > SESSION_TIMEOUT) {
+      // Session expired — auto logout
+      removeToken();
+      return null;
+    }
+  }
+
+  // Update last activity
+  localStorage.setItem('albumonline_last_activity', Date.now().toString());
+  // Clear close time since browser is open
+  localStorage.removeItem('albumonline_close_time');
+
+  return token;
 }
 
 function setToken(token) {
-  sessionStorage.setItem('albumonline_token', token);
+  localStorage.setItem('albumonline_token', token);
+  localStorage.setItem('albumonline_last_activity', Date.now().toString());
+  localStorage.removeItem('albumonline_close_time');
 }
 
 function removeToken() {
-  sessionStorage.removeItem('albumonline_token');
-  sessionStorage.removeItem('albumonline_user');
+  localStorage.removeItem('albumonline_token');
+  localStorage.removeItem('albumonline_user');
+  localStorage.removeItem('albumonline_last_activity');
+  localStorage.removeItem('albumonline_close_time');
 }
 
 function getUser() {
   try {
-    return JSON.parse(sessionStorage.getItem('albumonline_user'));
+    return JSON.parse(localStorage.getItem('albumonline_user'));
   } catch { return null; }
 }
 
 function setUser(user) {
-  sessionStorage.setItem('albumonline_user', JSON.stringify(user));
+  localStorage.setItem('albumonline_user', JSON.stringify(user));
 }
 
 function isLoggedIn() {
@@ -105,6 +134,13 @@ function logout() {
   removeToken();
   window.location.href = '/';
 }
+
+// Record close time when browser/tab is about to close
+window.addEventListener('beforeunload', () => {
+  if (localStorage.getItem('albumonline_token')) {
+    localStorage.setItem('albumonline_close_time', Date.now().toString());
+  }
+});
 
 // API helper with auth
 async function api(url, options = {}) {
