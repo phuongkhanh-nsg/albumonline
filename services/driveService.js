@@ -50,14 +50,14 @@ async function listDriveImagesPublic(folderId) {
 
   // Also try to extract filenames to pair with IDs
   // Pattern: [FILENAME](https://drive.google.com/file/d/FILE_ID/view...)
-  const namedFilePattern = /(?:>|"|\])([^<">\[\]]{1,100}\.(?:jpe?g|png|gif|webp|bmp|tiff?|heic))(?:<|"|,|\[).*?\/file\/d\/([a-zA-Z0-9_-]+)\//gi;
+  const namedFilePattern = /(?:>|"|\.])([^<"\>\[\]]{1,100}\.(?:jpe?g|png|gif|webp|bmp|tiff?|heic|mp4|mov|avi|mkv|webm|m4v))(?:<|",|\[).*?\/file\/d\/([a-zA-Z0-9_-]+)\//gi;
   const fileNameMap = {};
   while ((match = namedFilePattern.exec(html)) !== null) {
     fileNameMap[match[2]] = match[1].trim();
   }
 
   // Also try reverse pattern: URL first, then filename
-  const reversePattern = /\/file\/d\/([a-zA-Z0-9_-]+)\/[^"<]*?["'>][^<]*?([^/<>"]{1,100}\.(?:jpe?g|png|gif|webp|bmp|tiff?|heic))/gi;
+  const reversePattern = /\/file\/d\/([a-zA-Z0-9_-]+)\/[^"<]*?["'>][^<]*?([^\/<>"]{1,100}\.(?:jpe?g|png|gif|webp|bmp|tiff?|heic|mp4|mov|avi|mkv|webm|m4v))/gi;
   while ((match = reversePattern.exec(html)) !== null) {
     if (!fileNameMap[match[1]]) {
       fileNameMap[match[1]] = match[2].trim();
@@ -70,19 +70,20 @@ async function listDriveImagesPublic(folderId) {
   let sortIndex = 0;
   for (const fileId of fileIds) {
     const name = fileNameMap[fileId] || `image_${sortIndex + 1}.jpg`;
-    // Only include files that look like images (have image extension or no known non-image extension)
     const ext = name.toLowerCase().split('.').pop();
+    const videoExts = ['mp4', 'mov', 'avi', 'mkv', 'webm', 'flv', 'm4v'];
     const imageExts = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'tiff', 'tif', 'heic', 'svg'];
-    const nonImageExts = ['mp4', 'mp3', 'avi', 'mov', 'pdf', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'zip', 'rar', 'txt'];
-    
-    if (nonImageExts.includes(ext)) continue; // skip non-image files
+    const skipExts = ['mp3', 'pdf', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'zip', 'rar', 'txt'];
 
+    if (skipExts.includes(ext)) continue; // skip non-media files
+
+    const isVideo = videoExts.includes(ext);
     images.push({
       id: fileId,
       name: name,
-      mimeType: `image/${ext === 'jpg' ? 'jpeg' : ext}`,
+      mimeType: isVideo ? `video/${ext === 'mov' ? 'quicktime' : ext}` : `image/${ext === 'jpg' ? 'jpeg' : ext}`,
       thumbnailUrl: `https://drive.google.com/thumbnail?id=${fileId}&sz=w400`,
-      fullUrl: `https://drive.google.com/thumbnail?id=${fileId}&sz=w1600`,
+      fullUrl: isVideo ? `https://drive.google.com/file/d/${fileId}/view` : `https://drive.google.com/thumbnail?id=${fileId}&sz=w1600`,
       width: 0,
       height: 0,
     });
@@ -108,7 +109,7 @@ async function listDriveImages(folderId, { accessToken, apiKey }) {
   const images = [];
   let pageToken = null;
 
-  const query = `'${folderId}' in parents and mimeType contains 'image/' and trashed = false`;
+  const query = `'${folderId}' in parents and (mimeType contains 'image/' or mimeType contains 'video/') and trashed = false`;
   const fields = 'nextPageToken, files(id, name, mimeType, imageMediaMetadata, thumbnailLink, webContentLink)';
 
   do {
@@ -148,11 +149,14 @@ async function listDriveImages(folderId, { accessToken, apiKey }) {
     const data = await res.json();
 
     for (const file of data.files || []) {
+      const isVideo = file.mimeType && file.mimeType.startsWith('video/');
       // Use thumbnailLink from API when available, fallback to drive.google.com/thumbnail
       const thumb = file.thumbnailLink
         ? file.thumbnailLink.replace(/=s\d+/, '=s400')
         : `https://drive.google.com/thumbnail?id=${file.id}&sz=w400`;
-      const full = `https://drive.google.com/thumbnail?id=${file.id}&sz=w1600`;
+      const full = isVideo
+        ? `https://drive.google.com/file/d/${file.id}/view`
+        : `https://drive.google.com/thumbnail?id=${file.id}&sz=w1600`;
       images.push({
         id: file.id,
         name: file.name,

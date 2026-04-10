@@ -62,7 +62,7 @@
         <h1 id="albumTitle"></h1>
         <div class="gallery-info">
           <span id="ownerNameWrap" style="display:none;">👤 Chia sẻ bởi: <strong id="ownerName"></strong></span>
-          <span>📷 Số ảnh: <span id="photoCount">0</span></span>
+          <span>📷 Ảnh/Video: <span id="photoCount">0</span></span>
           <span>👁️ Lượt xem: <span id="viewCount">0</span></span>
           <span>📅 Ngày tạo: <span id="createdDate"></span></span>
           <span id="expiresDateWrap" style="display: none;">⏳ Ngày hết hạn: <span id="expiresDate"></span></span>
@@ -121,8 +121,9 @@
     <button class="lightbox-close" onclick="closeLightbox()">✕</button>
     <button class="lightbox-nav lightbox-prev" onclick="navLightbox(-1)">‹</button>
     <img id="lightboxImg" src="" alt="">
+    <iframe id="lightboxVideo" src="" style="display:none;" allow="autoplay" allowfullscreen></iframe>
     <button class="lightbox-nav lightbox-next" onclick="navLightbox(1)">›</button>
-    <button class="lightbox-download" id="lightboxDownload" onclick="downloadCurrentPhoto()" title="Tải ảnh">⬇</button>
+    <button class="lightbox-download" id="lightboxDownload" onclick="downloadCurrentPhoto()" title="Tải xuống">⬇</button>
   </div>
 
   <!-- Share Modal -->
@@ -149,6 +150,12 @@
     let currentLightboxIndex = -1;
     let viewMode = 'grid';
     const clientId = getClientId();
+
+    function isVideoMedia(photo) {
+      if (photo.mime_type && photo.mime_type.startsWith('video/')) return true;
+      const ext = (photo.name || '').split('.').pop().toLowerCase();
+      return ['mp4', 'mov', 'avi', 'mkv', 'webm', 'flv', 'm4v'].includes(ext);
+    }
 
     // Initialize
     loadAlbum();
@@ -297,17 +304,24 @@
         window.slideIndex = slideIndex;
         const photo = photos[slideIndex];
         const allowDl = album.allow_download;
+        const isVid = isVideoMedia(photo);
+        const dlAction = isVid
+          ? `window.open('https://drive.google.com/uc?export=download&id=${photo.drive_file_id}', '_blank')`
+          : `downloadPhoto('${photo.full_url}', '${photo.name.replace(/'/g, "\\'")}')`;
         grid.innerHTML = `
           <div style="width:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;">
             <div style="display:flex;align-items:center;gap:1rem;justify-content:center;width:100%;">
               <button class="btn btn-outline btn-sm" onclick="changeSlide(-1)">◀</button>
-              <img src="${photo.full_url}" alt="${photo.name}" style="max-width:90vw;max-height:70vh;border-radius:8px;box-shadow:0 2px 8px #0002;object-fit:contain;" onerror="this.src='https://drive.google.com/thumbnail?id=${photo.drive_file_id}&sz=w800'">
+              ${isVid
+                ? `<iframe src="https://drive.google.com/file/d/${photo.drive_file_id}/preview" class="slide-video-frame" allow="autoplay" allowfullscreen></iframe>`
+                : `<img src="${photo.full_url}" alt="${photo.name}" style="max-width:90vw;max-height:70vh;border-radius:8px;box-shadow:0 2px 8px #0002;object-fit:contain;" onerror="this.src='https://drive.google.com/thumbnail?id=${photo.drive_file_id}&sz=w800'">`
+              }
               <button class="btn btn-outline btn-sm" onclick="changeSlide(1)">▶</button>
             </div>
             <div style="margin-top:1rem;text-align:center;width:100%">
               <span style="font-weight:600;">${photo.name}</span>
               <span style="color:var(--text-muted);font-size:0.95em;"> (${slideIndex+1}/${photos.length})</span>
-              ${allowDl ? `<button class="btn btn-primary btn-sm" style="margin-left:1rem;" onclick="downloadPhoto('${photo.full_url}', '${photo.name.replace(/'/g, "\\'")}')">⬇️ Tải ảnh</button>` : ''}
+              ${allowDl ? `<button class="btn btn-primary btn-sm" style="margin-left:1rem;" onclick="${dlAction}">⬇️ Tải ${isVid ? 'video' : 'ảnh'}</button>` : ''}
             </div>
           </div>
         `;
@@ -318,19 +332,25 @@
           grid.style.gridTemplateColumns = 'repeat(auto-fill, minmax(220px, 1fr))';
         }
         const allowDl = album.allow_download;
-        grid.innerHTML = photos.map((photo, i) => `
+        grid.innerHTML = photos.map((photo, i) => {
+          const isVid = isVideoMedia(photo);
+          const dlHandler = isVid
+            ? `window.open('https://drive.google.com/uc?export=download&id=${photo.drive_file_id}', '_blank')`
+            : `downloadPhoto('${photo.full_url}', '${photo.name.replace(/'/g, "\\'")}')` ;
+          return `
           <div class="photo-card ${mySelections.has(photo.id) ? 'selected' : ''}"
                data-id="${photo.id}" data-index="${i}"
                onclick="handlePhotoClick(event, '${photo.id}', ${i})">
             <img src="${photo.thumbnail_url}" alt="${photo.name}" loading="lazy"
                  onerror="this.src='https://drive.google.com/thumbnail?id=${photo.drive_file_id}&sz=w400'">
+            ${isVid ? `<div class="video-play-icon">▶</div>` : ''}
             <div class="photo-overlay">
               <span class="photo-name">${photo.name}</span>
-              ${allowDl ? `<button class="photo-download-btn" onclick="event.stopPropagation(); downloadPhoto('${photo.full_url}', '${photo.name.replace(/'/g, "\\'")}')">⬇</button>` : ''}
+              ${allowDl ? `<button class="photo-download-btn" onclick="event.stopPropagation(); ${dlHandler}">⬇</button>` : ''}
             </div>
             <div class="photo-check">✓</div>
-          </div>
-        `).join('');
+          </div>`;
+        }).join('');
       }
       updateSelectionBar();
     }
@@ -439,11 +459,27 @@
     }
 
     // Lightbox
+    function updateLightboxMedia(index) {
+      const photo = photos[index];
+      const imgEl = document.getElementById('lightboxImg');
+      const videoEl = document.getElementById('lightboxVideo');
+      if (isVideoMedia(photo)) {
+        imgEl.style.display = 'none';
+        imgEl.src = '';
+        videoEl.src = `https://drive.google.com/file/d/${photo.drive_file_id}/preview`;
+        videoEl.style.display = '';
+      } else {
+        videoEl.style.display = 'none';
+        videoEl.src = '';
+        imgEl.src = photo.full_url;
+        imgEl.style.display = '';
+      }
+    }
+
     function openLightbox(index) {
       currentLightboxIndex = index;
-      const photo = photos[index];
+      updateLightboxMedia(index);
       const lb = document.getElementById('lightbox');
-      document.getElementById('lightboxImg').src = photo.full_url;
       lb.classList.add('active');
       document.body.style.overflow = 'hidden';
       // Show/hide download button in lightbox
@@ -454,11 +490,14 @@
     function closeLightbox() {
       document.getElementById('lightbox').classList.remove('active');
       document.body.style.overflow = '';
+      // Stop video by clearing src
+      const videoEl = document.getElementById('lightboxVideo');
+      videoEl.src = '';
     }
 
     function navLightbox(dir) {
       currentLightboxIndex = (currentLightboxIndex + dir + photos.length) % photos.length;
-      document.getElementById('lightboxImg').src = photos[currentLightboxIndex].full_url;
+      updateLightboxMedia(currentLightboxIndex);
     }
 
     // Download functions
@@ -483,7 +522,11 @@
     function downloadCurrentPhoto() {
       if (currentLightboxIndex >= 0 && currentLightboxIndex < photos.length) {
         const photo = photos[currentLightboxIndex];
-        downloadPhoto(photo.full_url, photo.name);
+        if (isVideoMedia(photo)) {
+          window.open(`https://drive.google.com/uc?export=download&id=${photo.drive_file_id}`, '_blank');
+        } else {
+          downloadPhoto(photo.full_url, photo.name);
+        }
       }
     }
 
