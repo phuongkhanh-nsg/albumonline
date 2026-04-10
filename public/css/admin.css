@@ -1,3 +1,19 @@
+/* Popup chỉnh sửa thông tin thành viên (admin-users) đồng bộ giao diện */
+.edit-modal-header-flex {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.edit-modal-close {
+  margin-left: auto;
+}
+.edit-modal-btn-group {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  margin-top: 1.5rem;
+  justify-content: flex-end;
+}
 /* Ẩn nút xóa mật khẩu và xóa hết hạn mặc định */
 #albumEditRemovePassBtn,
 #albumEditRemoveExpireBtn {
