@@ -151,30 +151,34 @@
   <div class="modal-overlay" id="albumEditModal">
     <div class="modal">
       <div class="modal-header">
-        <h3>✏️ Chỉnh sửa Album</h3>
+        <h3 class="modal-title-flex">✏️ Chỉnh sửa Album</h3>
         <button class="modal-close" onclick="closeAlbumEditModal()">✕</button>
       </div>
-      <div class="modal-body">
+      <form id="albumEditForm" onsubmit="event.preventDefault();saveAlbumEdit();">
         <input type="hidden" id="albumEditId">
-        <div class="form-group">
-          <label>Tiêu đề album</label>
-          <input type="text" id="albumEditTitle" placeholder="Nhập tiêu đề...">
+        <div class="modal-body">
+          <div class="form-group">
+            <label>📝 Tiêu đề album</label>
+            <input type="text" id="albumEditTitle" class="form-control" placeholder="Nhập tiêu đề..." required>
+          </div>
+          <div class="form-group">
+            <label>📅 Ngày hết hạn</label>
+            <input type="datetime-local" id="albumEditExpires" class="form-control" placeholder="dd/mm/yyyy ..." title="Ngày hết hạn">
+            <small>Để trống nếu không muốn hết hạn</small>
+          </div>
+          <div class="form-group">
+            <label>🔒 Mật khẩu album</label>
+            <input type="text" id="albumEditPassword" class="form-control" placeholder="Để trống nếu không cần mật khẩu">
+            <small>Người xem cần nhập mật khẩu để xem album</small>
+          </div>
+          <div class="album-edit-btn-group">
+            <button type="submit" class="btn btn-primary btn-sm" id="btnSaveAlbum">💾 Lưu thay đổi</button>
+            <button type="button" class="btn btn-outline btn-sm" onclick="closeAlbumEditModal()">Hủy</button>
+            <button type="button" class="btn btn-danger btn-sm" id="albumEditRemovePassBtn" onclick="removeAlbumPassword()" hidden>🔓 Xoá mật khẩu</button>
+            <button type="button" class="btn btn-outline btn-sm" id="albumEditRemoveExpireBtn" onclick="removeAlbumExpiry()" hidden>♾️ Xoá hết hạn</button>
+          </div>
         </div>
-        <div class="form-group">
-          <label>Mật khẩu album</label>
-          <input type="text" id="albumEditPassword" placeholder="Để trống nếu không cần mật khẩu">
-          <span class="hint">Người xem cần nhập mật khẩu để xem album</span>
-        </div>
-        <div class="form-group">
-          <label>Ngày hết hạn</label>
-          <input type="datetime-local" id="albumEditExpires">
-          <span class="hint">Để trống nếu không muốn hết hạn</span>
-        </div>
-      </div>
-      <div class="modal-footer">
-        <button class="btn-modal btn-cancel" onclick="closeAlbumEditModal()">Hủy</button>
-        <button class="btn-modal btn-save" id="btnSaveAlbum" onclick="saveAlbumEdit()">💾 Lưu thay đổi</button>
-      </div>
+      </form>
     </div>
   </div>
 

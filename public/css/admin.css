@@ -1,3 +1,16 @@
+/* Đồng bộ giao diện popup chỉnh sửa album */
+.modal-title-flex {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.album-edit-btn-group {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  margin-top: 1.5rem;
+}
 /* =====================================================
    admin.css — Shared styles for admin/manage pages
    Extracted from inline <style> blocks in:
