@@ -170,12 +170,12 @@ router.get('/:id', optionalAuth, async (req, res) => {
     const photos = await db.prepare('SELECT * FROM photos WHERE album_id = ? ORDER BY sort_order').all(req.params.id);
 
     // Admin hoặc chủ album có thể bypass mật khẩu
-    const isOwnerOrAdmin = req.user && (req.user.id === album.user_id || req.user.role === 'admin');
+    const isAdmin = req.user && req.user.role === 'admin';
 
     res.json({
       ...album,
       password: album.password ? true : false,
-      bypassPassword: isOwnerOrAdmin ? true : false,
+      bypassPassword: isAdmin ? true : false,
       photos,
     });
   } catch (err) {
