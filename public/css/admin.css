@@ -1,7 +1,11 @@
 /* Đảm bảo popup chỉnh sửa album ở admin-users rộng như manage */
 .admin-page #albumEditModal .modal {
   max-width: 800px;
-  width: 100%;
+  width: auto;
+  margin: auto;
+  left: 0;
+  right: 0;
+  position: relative;
 }
 /* Đồng bộ giao diện popup chỉnh sửa album */
 .modal-title-flex {
