@@ -438,6 +438,9 @@
       document.getElementById('albumEditTitle').value = album.title || '';
       document.getElementById('albumEditPassword').value = album.password || '';
       document.getElementById('albumEditExpires').value = '';
+      // Lưu giá trị gốc để so sánh khi lưu
+      document.getElementById('albumEditModal').dataset.origPassword = album.password || '';
+      document.getElementById('albumEditModal').dataset.origExpire = album.expires_at || '';
       // Hiện nút xóa nếu có giá trị
       if (album.password) {
         document.getElementById('albumEditRemovePassBtn').style.display = '';
@@ -482,11 +485,30 @@
       let expiresVal = document.getElementById('albumEditExpires').value;
       if (!title) { showToast('Tiêu đề không được để trống', 'error'); return; }
 
-      // Kiểm tra trạng thái xóa tạm thời
+      // Lấy giá trị gốc để so sánh
+      const origPassword = document.getElementById('albumEditModal').dataset.origPassword || '';
+      const origExpire = document.getElementById('albumEditModal').dataset.origExpire || '';
       const removedPassword = document.getElementById('albumEditModal').dataset.removedPassword === '1';
       const removedExpire = document.getElementById('albumEditModal').dataset.removedExpire === '1';
-      if (removedPassword) password = '';
-      if (removedExpire) expiresVal = '';
+
+      // Chỉ gửi các trường có thay đổi
+      const body = { title };
+      // Xử lý mật khẩu: nếu bấm xóa hoặc sửa thì mới gửi
+      if (removedPassword) {
+        body.password = '';
+      } else if (password !== origPassword) {
+        body.password = password;
+      }
+      // Xử lý ngày hết hạn: nếu bấm xóa hoặc sửa thì mới gửi
+      if (removedExpire) {
+        body.expiresAt = null;
+      } else if (expiresVal) {
+        const newExpireIso = new Date(expiresVal).toISOString();
+        // Chỉ gửi nếu khác giá trị gốc
+        if (!origExpire || new Date(origExpire).toISOString() !== newExpireIso) {
+          body.expiresAt = newExpireIso;
+        }
+      }
 
       const btn = document.getElementById('btnSaveAlbum');
       btn.disabled = true;
@@ -494,10 +516,6 @@
 
       try {
         const token = getToken();
-        const body = { title, password: password || '' };
-        if (expiresVal) body.expiresAt = new Date(expiresVal).toISOString();
-        else if (removedExpire) body.expiresAt = null;
-
         const res = await fetch(`/api/albums/${albumId}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
