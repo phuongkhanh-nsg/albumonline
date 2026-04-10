@@ -154,7 +154,7 @@ router.post('/', optionalAuth, async (req, res) => {
 });
 
 // Get album info
-router.get('/:id', async (req, res) => {
+router.get('/:id', optionalAuth, async (req, res) => {
   try {
     const album = await db.prepare('SELECT a.*, u.display_name AS owner_name FROM albums a LEFT JOIN users u ON a.user_id = u.id WHERE a.id = ?').get(req.params.id);
     if (!album) {
@@ -169,9 +169,13 @@ router.get('/:id', async (req, res) => {
 
     const photos = await db.prepare('SELECT * FROM photos WHERE album_id = ? ORDER BY sort_order').all(req.params.id);
 
+    // Admin hoặc chủ album có thể bypass mật khẩu
+    const isOwnerOrAdmin = req.user && (req.user.id === album.user_id || req.user.role === 'admin');
+
     res.json({
       ...album,
       password: album.password ? true : false,
+      bypassPassword: isOwnerOrAdmin ? true : false,
       photos,
     });
   } catch (err) {

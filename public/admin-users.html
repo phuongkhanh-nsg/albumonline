@@ -389,11 +389,19 @@
         html += `<div class="album-card">
           <div class="album-card-icon">📸</div>
           <div class="album-card-title"><a href="/album/${a.id}" target="_blank">${escapeHtmlUtil(a.title)}</a></div>
-          ${a.photo_count != null ? `<div class="album-card-meta"><span>🖼️ ${a.photo_count} ảnh</span></div>` : ''}
+          <div class="album-card-meta">
+            ${a.photo_count != null ? `<span>📷 ${a.photo_count} ảnh</span>` : ''}
+            <span>📅 ${formatDate(a.created_at)}</span>
+          </div>
+          <div class="album-card-badges">
+            ${a.password ? '<span class="badge badge-orange">🔒 Có mật khẩu</span>' : ''}
+            ${a.expires_at ? `<span class="badge badge-red">⏰ Hết hạn: ${formatDate(a.expires_at)}</span>` : '<span class="badge badge-green">♾️ Không hết hạn</span>'}
+          </div>
           <div class="album-card-actions">
             <a href="/album/${a.id}" target="_blank" class="btn-action btn-view">↗ Xem</a>
-            <button class="btn-action btn-edit" onclick="openAlbumEditModal('${a.id}')">✏️ Sửa</button>
-            <button class="btn-action btn-delete" onclick="confirmDeleteAlbum('${a.id}')">🗑️ Xóa</button>
+            <button class="btn-action btn-edit-action" onclick="openAlbumEditModal('${a.id}')">✏️ Sửa</button>
+            <button class="btn-action btn-link-action" onclick="copyToClipboard(window.location.origin + '/album/${a.id}')">🔗 Link</button>
+            <button class="btn-action btn-delete-action" onclick="confirmDeleteAlbum('${a.id}')">🗑️ Xóa</button>
           </div>
         </div>`;
       }

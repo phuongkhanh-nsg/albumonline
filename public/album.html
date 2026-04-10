@@ -180,7 +180,7 @@
         document.title = `${album.title} - AlbumOnline`;
 
         // Check if password protected
-        if (data.password === true) {
+        if (data.password === true && !data.bypassPassword) {
           const verified = sessionStorage.getItem(`album_verified_${albumId}`);
           if (!verified) {
             document.getElementById('loadingState').style.display = 'none';

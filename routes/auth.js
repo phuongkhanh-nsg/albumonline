@@ -32,8 +32,14 @@ router.get('/admin/users', requireAuth, async (req, res) => {
   }
   // Lấy danh sách user
   const users = await db.prepare('SELECT id, username, email, display_name, role, created_at FROM users').all();
-  // Lấy album của từng user
-  const albums = await db.prepare('SELECT id, user_id, title, drive_link, created_at FROM albums').all();
+  // Lấy album của từng user (kèm password, expires_at, photo_count để admin quản lý đầy đủ)
+  const albums = await db.prepare(`
+    SELECT a.id, a.user_id, a.title, a.drive_link, a.password, a.expires_at, a.created_at,
+      COUNT(p.id) as photo_count
+    FROM albums a LEFT JOIN photos p ON a.id = p.album_id
+    GROUP BY a.id
+    ORDER BY a.created_at DESC
+  `).all();
   // Gộp dữ liệu
   const userMap = {};
   users.forEach(u => userMap[u.id] = { ...u, albums: [] });
