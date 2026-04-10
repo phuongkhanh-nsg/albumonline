@@ -174,8 +174,8 @@
           <div class="album-edit-btn-group">
             <button type="submit" class="btn btn-primary btn-sm" id="btnSaveAlbum">💾 Lưu thay đổi</button>
             <button type="button" class="btn btn-outline btn-sm" onclick="closeAlbumEditModal()">Hủy</button>
-            <button type="button" class="btn btn-danger btn-sm" id="albumEditRemovePassBtn" onclick="removeAlbumPassword()" hidden>🔓 Xoá mật khẩu</button>
-            <button type="button" class="btn btn-outline btn-sm" id="albumEditRemoveExpireBtn" onclick="removeAlbumExpiry()" hidden>♾️ Xoá hết hạn</button>
+            <button type="button" class="btn btn-danger btn-sm" id="albumEditRemovePassBtn" onclick="removeAlbumPassword()" style="display:none">🔓 Xoá mật khẩu</button>
+            <button type="button" class="btn btn-outline btn-sm" id="albumEditRemoveExpireBtn" onclick="removeAlbumExpiry()" style="display:none">♾️ Xoá hết hạn</button>
           </div>
         </div>
       </form>
@@ -440,10 +440,61 @@
       if (album.expires_at) {
         const d = new Date(album.expires_at);
         document.getElementById('albumEditExpires').value = new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+        document.getElementById('albumEditRemoveExpireBtn').style.display = '';
       } else {
         document.getElementById('albumEditExpires').value = '';
+        document.getElementById('albumEditRemoveExpireBtn').style.display = 'none';
       }
+      document.getElementById('albumEditRemovePassBtn').style.display = album.password ? '' : 'none';
       document.getElementById('albumEditModal').classList.add('active');
+  }
+
+  async function removeAlbumPassword() {
+    const albumId = document.getElementById('albumEditId').value;
+    try {
+      const token = getToken();
+      const res = await fetch(`/api/albums/${albumId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+        body: JSON.stringify({ password: '' })
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        showToast(data.error || 'Lỗi khi xóa mật khẩu', 'error');
+        return;
+      }
+      document.getElementById('albumEditPassword').value = '';
+      document.getElementById('albumEditRemovePassBtn').style.display = 'none';
+      showToast('Đã xoá mật khẩu album!', 'success');
+      await fetchUsers();
+      if (selectedUserId) selectUser(selectedUserId);
+    } catch (err) {
+      showToast('Lỗi kết nối server', 'error');
+    }
+  }
+
+  async function removeAlbumExpiry() {
+    const albumId = document.getElementById('albumEditId').value;
+    try {
+      const token = getToken();
+      const res = await fetch(`/api/albums/${albumId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+        body: JSON.stringify({ expiresAt: null })
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        showToast(data.error || 'Lỗi khi xóa hết hạn', 'error');
+        return;
+      }
+      document.getElementById('albumEditExpires').value = '';
+      document.getElementById('albumEditRemoveExpireBtn').style.display = 'none';
+      showToast('Đã xoá ngày hết hạn!', 'success');
+      await fetchUsers();
+      if (selectedUserId) selectUser(selectedUserId);
+    } catch (err) {
+      showToast('Lỗi kết nối server', 'error');
+    }
     }
 
     function closeAlbumEditModal() {

@@ -1,3 +1,8 @@
+/* Ẩn nút xóa mật khẩu và xóa hết hạn mặc định */
+#albumEditRemovePassBtn,
+#albumEditRemoveExpireBtn {
+  display: none;
+}
 /* Đảm bảo popup chỉnh sửa album ở admin-users rộng như manage */
 .admin-page #albumEditModal .modal {
   max-width: 800px;
