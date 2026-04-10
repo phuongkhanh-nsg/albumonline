@@ -1,6 +1,6 @@
 /* Đảm bảo popup chỉnh sửa album ở admin-users rộng như manage */
 .admin-page #albumEditModal .modal {
-  max-width: 500px;
+  max-width: 800px;
   width: 100%;
 }
 /* Đồng bộ giao diện popup chỉnh sửa album */
