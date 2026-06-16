@@ -411,8 +411,15 @@ select.form-control {
 
 .gallery-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
   gap: 12px;
+}
+
+.gallery-grid.grid-normal {
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+}
+
+.gallery-grid.grid-large {
+  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
 }
 
 .photo-card {
@@ -591,7 +598,7 @@ select.form-control {
   right: 0;
   bottom: 0;
   background: rgba(0, 0, 0, 0.95);
-  z-index: 1000;
+  z-index: 9999;
   align-items: center;
   justify-content: center;
 }
@@ -971,8 +978,13 @@ select.form-control {
     grid-template-columns: 1fr;
   }
 
-  .gallery-grid {
+  .gallery-grid.grid-normal {
     grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 8px;
+  }
+
+  .gallery-grid.grid-large {
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
     gap: 8px;
   }
 
@@ -1045,8 +1057,12 @@ select.form-control {
 }
 
 @media (max-width: 480px) {
-  .gallery-grid {
+  .gallery-grid.grid-normal {
     grid-template-columns: repeat(2, 1fr);
+  }
+
+  .gallery-grid.grid-large {
+    grid-template-columns: 1fr;
   }
 
   .hero h1 {

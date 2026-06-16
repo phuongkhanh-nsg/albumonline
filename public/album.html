@@ -287,7 +287,9 @@
       }
 
       document.getElementById('emptyState').style.display = 'none';
-      grid.style.display = 'grid';
+      grid.className = 'gallery-grid';
+      grid.style.display = '';
+      grid.style.gridTemplateColumns = '';
 
       if (viewMode === 'slide') {
                 // Đặt timer tự động chuyển slide sau 6 giây
@@ -297,7 +299,6 @@
                   }
                 }, 6000);
         grid.style.display = 'flex';
-        grid.style.gridTemplateColumns = '1fr';
         let slideIndex = window.slideIndex || 0;
         if (slideIndex < 0) slideIndex = 0;
         if (slideIndex >= photos.length) slideIndex = photos.length - 1;
@@ -327,9 +328,9 @@
         `;
       } else {
         if (viewMode === 'large') {
-          grid.style.gridTemplateColumns = 'repeat(auto-fill, minmax(350px, 1fr))';
+          grid.classList.add('grid-large');
         } else {
-          grid.style.gridTemplateColumns = 'repeat(auto-fill, minmax(220px, 1fr))';
+          grid.classList.add('grid-normal');
         }
         const allowDl = album.allow_download;
         grid.innerHTML = photos.map((photo, i) => {
