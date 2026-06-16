@@ -19,8 +19,9 @@ if (DATABASE_URL) {
     db = require('better-sqlite3') && require('./sqlite');
     initPromise = Promise.resolve();
   } catch (e) {
-    console.error('No DATABASE_URL and SQLite not available:', e.message);
-    process.exit(1);
+    const msg = 'No DATABASE_URL and SQLite not available: ' + e.message;
+    console.error(msg);
+    initPromise = Promise.reject(new Error(msg));
   }
 }
 
