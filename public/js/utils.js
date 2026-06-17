@@ -169,13 +169,18 @@ function updateNavbar() {
   if (!navLinks) return;
   const user = getUser();
   const authHtml = user
-    ? `<a href="/account" class="nav-user">👤 ${escapeHtmlUtil(user.displayName || user.username)}</a>
-       <a href="#" onclick="logout(); return false;">Đăng xuất</a>`
-    : `<a href="/login">Đăng nhập</a>`;
+    ? `<a href="/account" class="nav-user-info" title="Thông tin tài khoản">
+         <span class="nav-avatar">👤</span>
+         <span class="nav-username">${escapeHtmlUtil(user.displayName || user.username)}</span>
+       </a>
+       <a href="#" class="nav-logout-btn" onclick="logout(); return false;" title="Đăng xuất">
+         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+       </a>`
+    : `<a href="/login" class="nav-login-btn">Đăng nhập</a>`;
 
   // Remove old auth links
   navLinks.querySelectorAll('.nav-auth').forEach(el => el.remove());
-  const authContainer = document.createElement('span');
+  const authContainer = document.createElement('div');
   authContainer.className = 'nav-auth';
   authContainer.innerHTML = authHtml;
   navLinks.appendChild(authContainer);
