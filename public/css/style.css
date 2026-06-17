@@ -1165,6 +1165,8 @@ select.form-control {
   padding: 0.5rem 1rem;
   border-radius: 8px;
   transition: all 0.2s;
+  min-width: 0;
+  flex: 1;
 }
 
 .nav-user-info:hover {
@@ -1196,12 +1198,13 @@ select.form-control {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 36px;
-  height: 36px;
+  gap: 6px;
+  padding: 0.5rem 0.75rem;
   border-radius: 8px;
   color: var(--text-muted);
   transition: all 0.2s;
   text-decoration: none;
+  flex-shrink: 0;
 }
 
 .nav-logout-btn:hover {

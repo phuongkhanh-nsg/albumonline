@@ -155,7 +155,8 @@ async function api(url, options = {}) {
     if (res.status === 401 && token) {
       removeToken();
     }
-    const err = new Error(data.error || 'Có lỗi xảy ra');
+    const errorMessage = typeof data.error === 'string' ? data.error : (data.message || 'Có lỗi xảy ra');
+    const err = new Error(errorMessage);
     err.status = res.status;
     err.data = data;
     throw err;
@@ -174,7 +175,7 @@ function updateNavbar() {
          <span class="nav-username">${escapeHtmlUtil(user.displayName || user.username)}</span>
        </a>
        <a href="#" class="nav-logout-btn" onclick="logout(); return false;" title="Đăng xuất">
-         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+         🚪 <span class="logout-text">Đăng xuất</span>
        </a>`
     : `<a href="/login" class="nav-login-btn">Đăng nhập</a>`;
 
