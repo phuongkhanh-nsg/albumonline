@@ -35,9 +35,27 @@
     </div>
 
     <div id="searchBar" style="display:none; margin-bottom: 1.5rem;">
-      <div style="position:relative; max-width: 400px;">
-        <span style="position:absolute; left:12px; top:50%; transform:translateY(-50%); font-size:0.9rem; pointer-events:none;">🔍</span>
-        <input type="text" id="albumSearch" placeholder="Tìm kiếm album..." oninput="filterAlbums()" style="width:100%; padding: 10px 14px 10px 36px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; color: var(--text); font-size: 0.9rem;">
+      <div style="display: flex; gap: 1rem; flex-wrap: wrap; align-items: center; background: var(--bg-card); padding: 1rem; border-radius: 8px; border: 1px solid var(--border);">
+        <div style="position:relative; flex: 1; min-width: 250px;">
+          <span style="position:absolute; left:12px; top:50%; transform:translateY(-50%); font-size:0.9rem; pointer-events:none;">🔍</span>
+          <input type="text" id="albumSearch" placeholder="Tìm kiếm album..." oninput="filterAlbums()" style="width:100%; padding: 10px 14px 10px 36px; background: var(--bg); border: 1px solid var(--border); border-radius: 6px; color: var(--text); font-size: 0.9rem;">
+        </div>
+        
+        <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center;">
+          <div style="display: flex; align-items: center; gap: 0.5rem;">
+            <label style="font-size: 0.85rem; color: var(--text-muted); white-space: nowrap;">Từ:</label>
+            <input type="date" id="filterStartDate" onchange="filterAlbums()" style="padding: 8px; background: var(--bg); border: 1px solid var(--border); border-radius: 6px; color: var(--text); font-size: 0.85rem;">
+          </div>
+          <div style="display: flex; align-items: center; gap: 0.5rem;">
+            <label style="font-size: 0.85rem; color: var(--text-muted); white-space: nowrap;">Đến:</label>
+            <input type="date" id="filterEndDate" onchange="filterAlbums()" style="padding: 8px; background: var(--bg); border: 1px solid var(--border); border-radius: 6px; color: var(--text); font-size: 0.85rem;">
+          </div>
+          <select id="filterStatus" onchange="filterAlbums()" style="padding: 8px 12px; background: var(--bg); border: 1px solid var(--border); border-radius: 6px; color: var(--text); font-size: 0.85rem;">
+            <option value="all">Tất cả trạng thái</option>
+            <option value="active">Còn hạn</option>
+            <option value="expired">Đã hết hạn</option>
+          </select>
+        </div>
       </div>
     </div>
 
@@ -208,10 +226,52 @@
       container.innerHTML = html;
     }
 
+    function removeAccents(str) {
+      return str.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/đ/g, 'd').replace(/Đ/g, 'D');
+    }
+
     function filterAlbums() {
-      const q = document.getElementById('albumSearch').value.toLowerCase().trim();
+      const searchInput = document.getElementById('albumSearch').value;
+      const q = removeAccents(searchInput.toLowerCase().trim());
+      const startDate = document.getElementById('filterStartDate').value;
+      const endDate = document.getElementById('filterEndDate').value;
+      const status = document.getElementById('filterStatus').value;
+      const now = new Date();
+
       currentPage = 1;
-      filteredAlbums = q ? albumsData.filter(a => a.title.toLowerCase().includes(q)) : albumsData;
+      
+      filteredAlbums = albumsData.filter(a => {
+        // Text search (accentless)
+        if (q) {
+          const title = removeAccents(a.title.toLowerCase());
+          if (!title.includes(q)) return false;
+        }
+
+        // Date range filter
+        if (startDate || endDate) {
+          const createdAt = new Date(a.created_at);
+          if (startDate) {
+            const start = new Date(startDate);
+            start.setHours(0, 0, 0, 0);
+            if (createdAt < start) return false;
+          }
+          if (endDate) {
+            const end = new Date(endDate);
+            end.setHours(23, 59, 59, 999);
+            if (createdAt > end) return false;
+          }
+        }
+
+        // Status filter
+        if (status !== 'all') {
+          const isExpired = a.expires_at ? new Date(a.expires_at) < now : false;
+          if (status === 'active' && isExpired) return false;
+          if (status === 'expired' && !isExpired) return false;
+        }
+
+        return true;
+      });
+
       renderAlbums();
     }
 
