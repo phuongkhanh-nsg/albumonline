@@ -391,15 +391,18 @@ select.form-control {
 
 .gallery-info {
   display: flex;
-  gap: 1.5rem;
+  flex-wrap: wrap;
+  gap: 1rem;
   color: var(--text-muted);
   font-size: 0.9rem;
+  margin-top: 0.5rem;
 }
 
 .gallery-info span {
-  display: flex;
+  display: inline-flex;
   align-items: center;
   gap: 4px;
+  white-space: nowrap;
 }
 
 .gallery-toolbar {
