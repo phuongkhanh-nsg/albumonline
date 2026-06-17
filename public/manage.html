@@ -41,16 +41,18 @@
           <input type="text" id="albumSearch" placeholder="Tìm kiếm album..." oninput="filterAlbums()" style="width:100%; padding: 10px 14px 10px 36px; background: var(--bg); border: 1px solid var(--border); border-radius: 6px; color: var(--text); font-size: 0.9rem;">
         </div>
         
-        <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center;">
-          <div style="display: flex; align-items: center; gap: 0.5rem;">
-            <label style="font-size: 0.85rem; color: var(--text-muted); white-space: nowrap;">Từ:</label>
-            <input type="date" id="filterStartDate" onchange="filterAlbums()" style="padding: 8px; background: var(--bg); border: 1px solid var(--border); border-radius: 6px; color: var(--text); font-size: 0.85rem;">
+        <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center; flex: 1;">
+          <div style="display: flex; gap: 0.5rem; flex-wrap: nowrap; align-items: center; flex: 1; min-width: 250px;">
+            <div style="display: flex; align-items: center; gap: 0.5rem; flex: 1;">
+              <label style="font-size: 0.85rem; color: var(--text-muted); white-space: nowrap;">Từ:</label>
+              <input type="date" id="filterStartDate" onchange="filterAlbums()" style="padding: 8px; background: var(--bg); border: 1px solid var(--border); border-radius: 6px; color: var(--text); font-size: 0.85rem; width: 100%; min-width: 0;">
+            </div>
+            <div style="display: flex; align-items: center; gap: 0.5rem; flex: 1;">
+              <label style="font-size: 0.85rem; color: var(--text-muted); white-space: nowrap;">Đến:</label>
+              <input type="date" id="filterEndDate" onchange="filterAlbums()" style="padding: 8px; background: var(--bg); border: 1px solid var(--border); border-radius: 6px; color: var(--text); font-size: 0.85rem; width: 100%; min-width: 0;">
+            </div>
           </div>
-          <div style="display: flex; align-items: center; gap: 0.5rem;">
-            <label style="font-size: 0.85rem; color: var(--text-muted); white-space: nowrap;">Đến:</label>
-            <input type="date" id="filterEndDate" onchange="filterAlbums()" style="padding: 8px; background: var(--bg); border: 1px solid var(--border); border-radius: 6px; color: var(--text); font-size: 0.85rem;">
-          </div>
-          <select id="filterStatus" onchange="filterAlbums()" style="padding: 8px 12px; background: var(--bg); border: 1px solid var(--border); border-radius: 6px; color: var(--text); font-size: 0.85rem;">
+          <select id="filterStatus" onchange="filterAlbums()" style="padding: 8px 12px; background: var(--bg); border: 1px solid var(--border); border-radius: 6px; color: var(--text); font-size: 0.85rem; flex: 1; min-width: 150px;">
             <option value="all">Tất cả trạng thái</option>
             <option value="active">Còn hạn</option>
             <option value="expired">Đã hết hạn</option>
