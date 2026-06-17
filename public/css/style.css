@@ -1042,15 +1042,25 @@ select.form-control {
     margin-top: auto;
     width: 100%;
     margin-left: 0;
-    padding-left: 0;
+    padding: 1rem;
     border-left: none;
     border-top: 1px solid rgba(255, 255, 255, 0.1);
-    padding-top: 1.5rem;
-    justify-content: space-between;
+    background: var(--bg-card);
+    flex-direction: column;
+    gap: 0.5rem;
   }
 
-  .nav-auth .nav-user-info {
-    width: auto;
+  .nav-auth .nav-user-info, 
+  .nav-auth .nav-logout-btn {
+    width: 100%;
+    justify-content: center;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    padding: 0.75rem 1rem;
+  }
+  
+  .nav-auth .nav-username {
+    max-width: 100%;
   }
   .navbar-overlay {
     display: none;
@@ -1158,6 +1168,7 @@ select.form-control {
 .nav-user-info {
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 0.5rem;
   text-decoration: none;
   color: var(--text);
@@ -1167,24 +1178,19 @@ select.form-control {
   transition: all 0.2s;
   min-width: 0;
   flex: 1;
+  background: var(--bg-card);
+  border: 1px solid transparent;
 }
 
 .nav-user-info:hover {
   background: rgba(255, 255, 255, 0.05);
+  border-color: var(--border);
   color: #fff;
   text-decoration: none;
 }
 
-.nav-avatar {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 28px;
-  height: 28px;
-  background: rgba(229, 62, 62, 0.1);
-  color: var(--primary);
-  border-radius: 50%;
-  font-size: 0.9rem;
+.nav-icon {
+  opacity: 0.7;
 }
 
 .nav-username {
@@ -1199,18 +1205,20 @@ select.form-control {
   align-items: center;
   justify-content: center;
   gap: 6px;
-  padding: 0.5rem 0.75rem;
+  padding: 0.5rem 1rem;
   border-radius: 8px;
   color: var(--text-muted);
+  background: transparent;
+  border: 1px solid transparent;
   transition: all 0.2s;
   text-decoration: none;
   flex-shrink: 0;
 }
 
 .nav-logout-btn:hover {
-  background: rgba(229, 62, 62, 0.15);
-  color: var(--primary);
-  text-decoration: none;
+  background: rgba(239, 68, 68, 0.1);
+  color: #ef4444;
+  border-color: rgba(239, 68, 68, 0.2);
 }
 
 .nav-login-btn {
