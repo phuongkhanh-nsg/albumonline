@@ -61,26 +61,32 @@
       <div>
         <h1 id="albumTitle"></h1>
         <div class="gallery-info">
-          <span id="ownerNameWrap" style="display:none;">👤 Chia sẻ bởi: <strong id="ownerName"></strong></span>
-          <span>📷 Ảnh/Video: <span id="photoCount">0</span></span>
-          <span>👁️ Lượt xem: <span id="viewCount">0</span></span>
-          <span>📅 Ngày tạo: <span id="createdDate"></span></span>
-          <span id="expiresDateWrap" style="display: none;">⏳ Ngày hết hạn: <span id="expiresDate"></span></span>
+          <span class="info-chip" id="ownerNameWrap" style="display:none;">👤 Chia sẻ bởi: <strong id="ownerName"></strong></span>
+          <span class="info-chip">📷 <strong id="photoCount">0</strong> ảnh/video</span>
+          <span class="info-chip">👁️ <strong id="viewCount">0</strong> lượt xem</span>
+          <span class="info-chip">📅 Ngày tạo: <strong id="createdDate"></strong></span>
+          <span class="info-chip" id="expiresDateWrap" style="display: none;">⏳ Ngày hết hạn: <strong id="expiresDate"></strong></span>
         </div>
       </div>
-      <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+      <div class="gallery-actions">
         <button class="btn btn-outline btn-sm" onclick="shareAlbum()">🔗 Chia sẻ</button>
         <button class="btn btn-outline btn-sm" id="refreshBtn" onclick="refreshAlbum()">🔄 Làm mới</button>
       </div>
     </div>
 
     <!-- Toolbar -->
-    <div class="gallery-toolbar">
-      <button class="btn btn-outline btn-sm" onclick="toggleSelectMode()" id="selectModeBtn">✅ Chế độ chọn ảnh</button>
-      <button class="btn btn-outline btn-sm" onclick="setViewMode('grid')" id="gridBtn">🔲 Lưới</button>
-      <button class="btn btn-outline btn-sm" onclick="setViewMode('large')" id="largeBtn">🖼️ Lớn</button>
-      <button class="btn btn-outline btn-sm" onclick="setViewMode('slide')" id="slideBtn">🎞️ Slide</button>
-      <button class="btn btn-outline btn-sm" id="selectAllBtn" style="display:none;" onclick="toggleSelectAllPhotos()">🗹 Chọn tất cả</button>
+    <div class="gallery-toolbar-wrapper">
+      <div class="gallery-segmented-controls" role="tablist">
+        <button class="segmented-btn active" id="btnModeGrid" onclick="setViewMode('grid')" title="Lưới tiêu chuẩn">🔲 Lưới</button>
+        <button class="segmented-btn" id="btnModeLarge" onclick="setViewMode('large')" title="Xem ảnh lớn">🖼️ Lớn</button>
+        <button class="segmented-btn" id="btnModeMasonry" onclick="setViewMode('masonry')" title="Xem tỷ lệ tự nhiên">📐 Tự nhiên</button>
+        <button class="segmented-btn" id="btnModeSlide" onclick="setViewMode('slide')" title="Xem dạng trình chiếu">🎞️ Trình chiếu</button>
+      </div>
+
+      <div class="gallery-action-group">
+        <button class="btn btn-outline btn-sm" onclick="toggleSelectMode()" id="selectModeBtn">✅ Chế độ chọn ảnh</button>
+        <button class="btn btn-outline btn-sm" id="selectAllBtn" style="display:none;" onclick="toggleSelectAllPhotos()">🗹 Chọn tất cả</button>
+      </div>
     </div>
 
     <!-- Client Name (for selection mode) -->
@@ -261,7 +267,7 @@
         expiresEl.textContent = formatDate(album.expires_at) + (isExpired ? ' (Đã hết hạn)' : '');
         expiresWrap.style.display = '';
         if (isExpired) {
-          expiresWrap.style.color = 'var(--danger, #e53e3e)';
+          expiresWrap.classList.add('expired');
         }
       }
 
@@ -269,15 +275,46 @@
         document.getElementById('maxSelectionsHint').textContent = ` / ${album.max_selections}`;
       }
 
+      // Khôi phục view mode đã lưu (nếu có)
+      const savedMode = localStorage.getItem('albumonline_view_mode');
+      if (savedMode && ['grid', 'large', 'masonry', 'slide'].includes(savedMode)) {
+        viewMode = savedMode;
+      }
+      updateViewModeButtons();
       renderGallery();
     }
 
+    let isSlideAutoPlaying = true;
+
+    function toggleSlideAutoPlay() {
+      isSlideAutoPlaying = !isSlideAutoPlaying;
+      const btn = document.getElementById('slideAutoPlayBtn');
+      if (btn) {
+        btn.textContent = isSlideAutoPlaying ? '⏸ Tạm dừng' : '▶ Tự chạy';
+      }
+      if (!isSlideAutoPlaying && window.slideTimer) {
+        clearTimeout(window.slideTimer);
+        window.slideTimer = null;
+      } else if (isSlideAutoPlaying && viewMode === 'slide') {
+        scheduleNextSlide();
+      }
+    }
+
+    function scheduleNextSlide() {
+      if (window.slideTimer) clearTimeout(window.slideTimer);
+      if (!isSlideAutoPlaying) return;
+      window.slideTimer = setTimeout(() => {
+        if (viewMode === 'slide') {
+          changeSlide(1);
+        }
+      }, 5000);
+    }
+
     function renderGallery() {
-            // Xóa timer cũ nếu có
-            if (window.slideTimer) {
-              clearTimeout(window.slideTimer);
-              window.slideTimer = null;
-            }
+      if (window.slideTimer) {
+        clearTimeout(window.slideTimer);
+        window.slideTimer = null;
+      }
       const grid = document.getElementById('galleryGrid');
 
       if (photos.length === 0) {
@@ -287,17 +324,10 @@
       }
 
       document.getElementById('emptyState').style.display = 'none';
-      grid.className = 'gallery-grid';
       grid.style.display = '';
-      grid.style.gridTemplateColumns = '';
+      grid.className = 'gallery-grid';
 
       if (viewMode === 'slide') {
-                // Đặt timer tự động chuyển slide sau 6 giây
-                window.slideTimer = setTimeout(() => {
-                  if (viewMode === 'slide') {
-                    changeSlide(1);
-                  }
-                }, 6000);
         grid.style.display = 'flex';
         let slideIndex = window.slideIndex || 0;
         if (slideIndex < 0) slideIndex = 0;
@@ -309,29 +339,61 @@
         const dlAction = isVid
           ? `window.open('https://drive.google.com/uc?export=download&id=${photo.drive_file_id}', '_blank')`
           : `downloadPhoto('${photo.full_url}', '${photo.name.replace(/'/g, "\\'")}')`;
+
         grid.innerHTML = `
-          <div style="width:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;">
-            <div style="display:flex;align-items:center;gap:1rem;justify-content:center;width:100%;">
-              <button class="btn btn-outline btn-sm" onclick="changeSlide(-1)">◀</button>
+          <div class="slide-container" id="slideContainer">
+            <div class="slide-main-stage" id="slideStage">
+              <button class="slide-nav-btn slide-nav-prev" onclick="changeSlide(-1)" title="Ảnh trước">‹</button>
               ${isVid
                 ? `<iframe src="https://drive.google.com/file/d/${photo.drive_file_id}/preview" class="slide-video-frame" allow="autoplay" allowfullscreen></iframe>`
-                : `<img src="${photo.full_url}" alt="${photo.name}" style="max-width:90vw;max-height:70vh;border-radius:8px;box-shadow:0 2px 8px #0002;object-fit:contain;" onerror="this.src='https://drive.google.com/thumbnail?id=${photo.drive_file_id}&sz=w800'">`
+                : `<img src="${photo.full_url}" alt="${photo.name}" class="slide-main-media" onerror="this.src='https://drive.google.com/thumbnail?id=${photo.drive_file_id}&sz=w1200'">`
               }
-              <button class="btn btn-outline btn-sm" onclick="changeSlide(1)">▶</button>
+              <button class="slide-nav-btn slide-nav-next" onclick="changeSlide(1)" title="Ảnh kế tiếp">›</button>
             </div>
-            <div style="margin-top:1rem;text-align:center;width:100%">
-              <span style="font-weight:600;">${photo.name}</span>
-              <span style="color:var(--text-muted);font-size:0.95em;"> (${slideIndex+1}/${photos.length})</span>
-              ${allowDl ? `<button class="btn btn-primary btn-sm" style="margin-left:1rem;" onclick="${dlAction}">⬇️ Tải ${isVid ? 'video' : 'ảnh'}</button>` : ''}
+
+            <div class="slide-control-bar">
+              <div class="slide-info-meta">
+                <span class="slide-filename" title="${photo.name}">${photo.name}</span>
+                <span class="slide-counter">${slideIndex + 1} / ${photos.length}</span>
+              </div>
+              <div class="slide-actions">
+                <button class="btn btn-outline btn-sm" id="slideAutoPlayBtn" onclick="toggleSlideAutoPlay()">
+                  ${isSlideAutoPlaying ? '⏸ Tạm dừng' : '▶ Tự chạy'}
+                </button>
+                ${allowDl ? `<button class="btn btn-primary btn-sm" onclick="${dlAction}">⬇️ Tải ${isVid ? 'video' : 'ảnh'}</button>` : ''}
+              </div>
+            </div>
+
+            <div class="slide-filmstrip" id="slideFilmstrip">
+              ${photos.map((p, idx) => `
+                <div class="filmstrip-item ${idx === slideIndex ? 'active' : ''}" onclick="goToSlide(${idx})">
+                  <img src="${p.thumbnail_url}" alt="${p.name}" loading="lazy" onerror="this.src='https://drive.google.com/thumbnail?id=${p.drive_file_id}&sz=w200'">
+                </div>
+              `).join('')}
             </div>
           </div>
         `;
+
+        // Tự scroll filmstrip đến ảnh hiện tại
+        setTimeout(() => {
+          const activeThumb = document.querySelector('.filmstrip-item.active');
+          if (activeThumb) {
+            activeThumb.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+          }
+        }, 50);
+
+        // Kích hoạt touch swipe cho slide
+        setupSlideSwipe();
+        scheduleNextSlide();
       } else {
         if (viewMode === 'large') {
           grid.classList.add('grid-large');
+        } else if (viewMode === 'masonry') {
+          grid.classList.add('grid-masonry');
         } else {
           grid.classList.add('grid-normal');
         }
+
         const allowDl = album.allow_download;
         grid.innerHTML = photos.map((photo, i) => {
           const isVid = isVideoMedia(photo);
@@ -347,7 +409,7 @@
             ${isVid ? `<div class="video-play-icon">▶</div>` : ''}
             <div class="photo-overlay">
               <span class="photo-name">${photo.name}</span>
-              ${allowDl ? `<button class="photo-download-btn" onclick="event.stopPropagation(); ${dlHandler}">⬇</button>` : ''}
+              ${allowDl ? `<button class="photo-download-btn" onclick="event.stopPropagation(); ${dlHandler}" title="Tải xuống">⬇</button>` : ''}
             </div>
             <div class="photo-check">✓</div>
           </div>`;
@@ -356,11 +418,39 @@
       updateSelectionBar();
     }
 
+    function goToSlide(index) {
+      window.slideIndex = index;
+      renderGallery();
+    }
+
     function changeSlide(dir) {
       window.slideIndex = (window.slideIndex || 0) + dir;
-      if (window.slideIndex < 0) window.slideIndex = 0;
-      if (window.slideIndex >= photos.length) window.slideIndex = photos.length - 1;
+      if (window.slideIndex < 0) window.slideIndex = photos.length - 1;
+      if (window.slideIndex >= photos.length) window.slideIndex = 0;
       renderGallery();
+    }
+
+    function setupSlideSwipe() {
+      const stage = document.getElementById('slideStage');
+      if (!stage) return;
+      let touchStartX = 0;
+      let touchEndX = 0;
+
+      stage.addEventListener('touchstart', (e) => {
+        touchStartX = e.changedTouches[0].screenX;
+      }, { passive: true });
+
+      stage.addEventListener('touchend', (e) => {
+        touchEndX = e.changedTouches[0].screenX;
+        const diff = touchEndX - touchStartX;
+        if (Math.abs(diff) > 45) {
+          if (diff < 0) {
+            changeSlide(1); // Vuốt sang trái -> Ảnh tiếp
+          } else {
+            changeSlide(-1); // Vuốt sang phải -> Ảnh trước
+          }
+        }
+      }, { passive: true });
     }
 
     function handlePhotoClick(e, photoId, index) {
@@ -375,9 +465,15 @@
     function toggleSelectMode() {
       selectMode = !selectMode;
       const btn = document.getElementById('selectModeBtn');
-      btn.style.background = selectMode ? 'var(--primary)' : '';
-      btn.style.color = selectMode ? '#fff' : '';
-      btn.style.borderColor = selectMode ? 'var(--primary)' : '';
+      if (selectMode) {
+        btn.classList.add('btn-primary');
+        btn.classList.remove('btn-outline');
+        btn.textContent = '✓ Đang chọn ảnh';
+      } else {
+        btn.classList.remove('btn-primary');
+        btn.classList.add('btn-outline');
+        btn.textContent = '✅ Chế độ chọn ảnh';
+      }
 
       document.getElementById('clientNameSection').style.display = selectMode ? 'block' : 'none';
 
@@ -450,12 +546,29 @@
     }
 
     // View Mode
+    function updateViewModeButtons() {
+      const mapping = {
+        'grid': 'btnModeGrid',
+        'large': 'btnModeLarge',
+        'masonry': 'btnModeMasonry',
+        'slide': 'btnModeSlide'
+      };
+      Object.keys(mapping).forEach(mode => {
+        const el = document.getElementById(mapping[mode]);
+        if (el) {
+          if (mode === viewMode) {
+            el.classList.add('active');
+          } else {
+            el.classList.remove('active');
+          }
+        }
+      });
+    }
+
     function setViewMode(mode) {
       viewMode = mode;
-      document.getElementById('gridBtn').style.background = mode === 'grid' ? 'rgba(229,62,62,0.15)' : '';
-      document.getElementById('gridBtn').style.color = mode === 'grid' ? 'var(--primary)' : '';
-      document.getElementById('largeBtn').style.background = mode === 'large' ? 'rgba(229,62,62,0.15)' : '';
-      document.getElementById('largeBtn').style.color = mode === 'large' ? 'var(--primary)' : '';
+      localStorage.setItem('albumonline_view_mode', mode);
+      updateViewModeButtons();
       renderGallery();
     }
 
@@ -499,6 +612,24 @@
     function navLightbox(dir) {
       currentLightboxIndex = (currentLightboxIndex + dir + photos.length) % photos.length;
       updateLightboxMedia(currentLightboxIndex);
+    }
+
+    // Lightbox Touch Swipe for Mobile
+    let lbTouchStartX = 0;
+    const lbEl = document.getElementById('lightbox');
+    if (lbEl) {
+      lbEl.addEventListener('touchstart', (e) => {
+        lbTouchStartX = e.changedTouches[0].screenX;
+      }, { passive: true });
+      lbEl.addEventListener('touchend', (e) => {
+        // Chỉ swipe khi không chạm trúng nút điều khiển
+        if (e.target.closest('button')) return;
+        const diff = e.changedTouches[0].screenX - lbTouchStartX;
+        if (Math.abs(diff) > 45) {
+          if (diff < 0) navLightbox(1); // Vuốt trái sang ảnh kế tiếp
+          else navLightbox(-1); // Vuốt phải sang ảnh trước
+        }
+      }, { passive: true });
     }
 
     // Download functions
