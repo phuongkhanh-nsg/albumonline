@@ -30,75 +30,114 @@
       <p>Dán link thư mục Google Drive để tạo album chia sẻ</p>
     </div>
 
-    <div class="card" style="max-width: 700px; margin: 0 auto;">
-      <form id="createAlbumForm">
-        <div class="form-group">
-          <label>📝 Tên Album *</label>
-          <input type="text" class="form-control" id="albumTitle" placeholder="VD: Album NSG" required>
-        </div>
+    <style>
+      .create-layout {
+        display: grid;
+        grid-template-columns: 1.5fr 1fr;
+        gap: 1.5rem;
+        align-items: start;
+      }
+      @media (max-width: 900px) {
+        .create-layout {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
 
-        <div class="form-group">
-          <label>🔗 Link Google Drive *</label>
-          <input type="url" class="form-control" id="driveLink" placeholder="https://drive.google.com/drive/folders/..." required>
-          <small>Dán link thư mục Google Drive chứa ảnh. Đăng nhập bằng Google để truy cập thư mục riêng tư.</small>
-        </div>
+    <div class="create-layout">
+      <!-- Main Form (Left) -->
+      <div class="card">
+        <form id="createAlbumForm">
+          <div class="form-group">
+            <label>📝 Tên Album *</label>
+            <input type="text" class="form-control" id="albumTitle" placeholder="VD: Album NSG" required>
+          </div>
 
-        <div class="form-row">
           <div class="form-group">
-            <label>🔒 Mật khẩu (tuỳ chọn)</label>
-            <input type="text" class="form-control" id="albumPassword" placeholder="Để trống nếu không cần">
+            <label>🔗 Link Google Drive *</label>
+            <input type="url" class="form-control" id="driveLink" placeholder="https://drive.google.com/drive/folders/..." required>
+            <small>Dán link thư mục Google Drive chứa ảnh. Đăng nhập bằng Google để truy cập thư mục riêng tư.</small>
           </div>
-          <div class="form-group">
-            <label>🔢 Giới hạn chọn ảnh</label>
-            <input type="number" class="form-control" id="maxSelections" placeholder="0 = Không giới hạn" min="0" value="0">
-          </div>
-        </div>
 
-        <div class="form-row">
-          <div class="form-group">
-            <label>⏰ Thời hạn album</label>
-            <select class="form-control" id="expiresInDays" onchange="toggleCustomExpiry()">
-              <option value="0">Không hết hạn</option>
-              <option value="5">5 ngày</option>
-              <option value="7">7 ngày</option>
-              <option value="15">15 ngày</option>
-              <option value="30">30 ngày</option>
-              <option value="90">90 ngày</option>
-              <option value="custom">📅 Tùy chọn ngày...</option>
-            </select>
-            <input type="datetime-local" class="form-control" id="customExpiryDate" style="display:none; margin-top:0.5rem;">
-            <small id="customExpiryHint" style="display:none; color:var(--text-muted); font-size:0.8rem;">Chọn ngày và giờ hết hạn cho album</small>
-          </div>
-          <div class="form-group">
-            <label>&nbsp;</label>
-            <div class="checkbox-group" style="height: 45px; align-items: center;">
-              <input type="checkbox" id="allowDownload" checked>
-              <label for="allowDownload" style="margin: 0; font-weight: 400;">Cho phép tải ảnh</label>
+          <div class="form-row">
+            <div class="form-group">
+              <label>🔒 Mật khẩu (tuỳ chọn)</label>
+              <input type="text" class="form-control" id="albumPassword" placeholder="Để trống nếu không cần">
+            </div>
+            <div class="form-group">
+              <label>🔢 Giới hạn chọn ảnh</label>
+              <input type="number" class="form-control" id="maxSelections" placeholder="0 = Không giới hạn" min="0" value="0">
             </div>
           </div>
-        </div>
 
-        <button type="submit" class="btn btn-primary" style="width: 100; margin-top: 1rem;" id="submitBtn">
-          🚀 Tạo Album
-        </button>
-      </form>
+          <div class="form-row">
+            <div class="form-group">
+              <label>⏰ Thời hạn album</label>
+              <select class="form-control" id="expiresInDays" onchange="toggleCustomExpiry()">
+                <option value="0">Không hết hạn</option>
+                <option value="5">5 ngày</option>
+                <option value="7">7 ngày</option>
+                <option value="15">15 ngày</option>
+                <option value="30">30 ngày</option>
+                <option value="90">90 ngày</option>
+                <option value="custom">📅 Tùy chọn ngày...</option>
+              </select>
+              <input type="datetime-local" class="form-control" id="customExpiryDate" style="display:none; margin-top:0.5rem;">
+              <small id="customExpiryHint" style="display:none; color:var(--text-muted); font-size:0.8rem;">Chọn ngày và giờ hết hạn cho album</small>
+            </div>
+            <div class="form-group">
+              <label>&nbsp;</label>
+              <div class="checkbox-group" style="height: 45px; align-items: center;">
+                <input type="checkbox" id="allowDownload" checked>
+                <label for="allowDownload" style="margin: 0; font-weight: 400;">Cho phép tải ảnh</label>
+              </div>
+            </div>
+          </div>
 
-      <!-- Success Result -->
-      <div id="resultSection" style="display: none; margin-top: 2rem; padding-top: 2rem; border-top: 1px solid var(--border);">
-        <h3 style="color: var(--success); margin-bottom: 1rem;">✅ Album đã được tạo thành công!</h3>
+          <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 1rem;" id="submitBtn">
+            🚀 Tạo Album
+          </button>
+        </form>
 
-        <div class="form-group">
-          <label>🔗 Link chia sẻ album</label>
-          <div class="copy-link-group">
-            <input type="text" class="form-control" id="shareLink" readonly>
-            <button class="btn btn-primary btn-sm" onclick="copyToClipboard(document.getElementById('shareLink').value)">📋 Copy</button>
+        <!-- Success Result -->
+        <div id="resultSection" style="display: none; margin-top: 2rem; padding-top: 2rem; border-top: 1px solid var(--border);">
+          <h3 style="color: var(--success); margin-bottom: 1rem;">✅ Album đã được tạo thành công!</h3>
+
+          <div class="form-group">
+            <label>🔗 Link chia sẻ album</label>
+            <div class="copy-link-group">
+              <input type="text" class="form-control" id="shareLink" readonly>
+              <button class="btn btn-primary btn-sm" onclick="copyToClipboard(document.getElementById('shareLink').value)">📋 Copy</button>
+            </div>
+          </div>
+
+          <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+            <a id="viewAlbumBtn" href="#" class="btn btn-success btn-sm">👁️ Xem Album</a>
+            <a href="/create" class="btn btn-outline btn-sm">➕ Tạo album khác</a>
+            <a href="/manage" class="btn btn-outline btn-sm">📋 Quản lý album</a>
           </div>
         </div>
+      </div>
 
-        <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
-          <a id="viewAlbumBtn" href="#" class="btn btn-success btn-sm">👁️ Xem Album</a>
-          <a href="/create" class="btn btn-outline btn-sm">➕ Tạo album khác</a>
-          <a href="/manage" class="btn btn-outline btn-sm">📋 Quản lý album</a>
+      <!-- Tips & Guidelines (Right) -->
+      <div style="display: flex; flex-direction: column; gap: 1.5rem;">
+        <div class="card">
+          <h3 style="font-size: 1.15rem; margin-bottom: 1rem;">💡 Hướng dẫn nhanh</h3>
+          <ul style="padding-left: 1.25rem; color: var(--text-muted); font-size: 0.9rem; line-height: 1.8;">
+            <li>Mở thư mục ảnh trên <strong>Google Drive</strong>.</li>
+            <li>Bấm <strong>Chia sẻ (Share)</strong> → Chọn quyền <em>"Bất kỳ ai có đường liên kết đều có thể xem"</em>.</li>
+            <li>Sao chép đường liên kết và dán vào ô <strong>Link Google Drive</strong> bên cạnh.</li>
+          </ul>
+        </div>
+
+        <div class="card">
+          <h3 style="font-size: 1.15rem; margin-bottom: 0.75rem;">🛡️ Tính năng nổi bật</h3>
+          <div style="display: flex; flex-direction: column; gap: 0.85rem; font-size: 0.9rem; color: var(--text-muted);">
+            <div>🔒 <strong>Bảo mật mật khẩu:</strong> Chỉ khách có mật khẩu mới xem được album.</div>
+            <div>⏱️ <strong>Hẹn giờ hết hạn:</strong> Tự động đóng link khi hết thời gian cho phép xem.</div>
+            <div>🎯 <strong>Khách chọn ảnh:</strong> Khách tự đánh dấu chọn các ảnh ưng ý để gửi lại.</div>
+            <div>⚡ <strong>Không tốn dung lượng:</strong> Ảnh được nạp trực tiếp qua Google Drive CDN.</div>
+          </div>
         </div>
       </div>
     </div>

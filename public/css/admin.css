@@ -319,8 +319,9 @@
 .admin-header {
   width: 100%;
   padding: 1.5rem 2rem;
-  background: linear-gradient(135deg, rgba(229, 62, 62, 0.06) 0%, rgba(26, 26, 46, 0.5) 100%);
+  background: #ffffff;
   border-bottom: 1px solid var(--border);
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -335,10 +336,11 @@
   align-items: center;
   gap: 0.5rem;
   margin: 0;
+  color: var(--text);
 }
 
 .admin-header .crown {
-  filter: drop-shadow(0 0 6px rgba(214, 158, 46, 0.5));
+  filter: drop-shadow(0 0 6px rgba(214, 158, 46, 0.3));
 }
 
 .admin-stats {
@@ -350,12 +352,13 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  background: rgba(255, 255, 255, 0.04);
+  background: #f1f5f9;
   border: 1px solid var(--border);
   border-radius: 20px;
   padding: 6px 14px;
   font-size: 0.8rem;
   color: var(--text-muted);
+  font-weight: 500;
 }
 
 .stat-chip strong {
@@ -377,7 +380,7 @@
   border-right: 1px solid var(--border);
   display: flex;
   flex-direction: column;
-  background: rgba(15, 15, 25, 0.5);
+  background: #ffffff;
 }
 
 .panel-header {
@@ -451,7 +454,7 @@
 }
 
 .user-item:hover {
-  background: rgba(229, 62, 62, 0.04);
+  background: #f1f5f9;
 }
 
 .user-item.active {
@@ -515,15 +518,15 @@
 }
 
 .role-admin {
-  background: linear-gradient(135deg, rgba(214, 158, 46, 0.2), rgba(214, 158, 46, 0.08));
-  color: var(--gold);
-  border: 1px solid rgba(214, 158, 46, 0.25);
+  background: rgba(217, 119, 6, 0.12);
+  color: #b45309;
+  border: 1px solid rgba(217, 119, 6, 0.25);
 }
 
 .role-user {
-  background: rgba(72, 187, 120, 0.1);
-  color: var(--success);
-  border: 1px solid rgba(72, 187, 120, 0.2);
+  background: rgba(16, 185, 129, 0.12);
+  color: #047857;
+  border: 1px solid rgba(16, 185, 129, 0.25);
 }
 
 .album-count {
@@ -537,6 +540,7 @@
   display: flex;
   flex-direction: column;
   flex: 1;
+  background: var(--bg);
 }
 
 .panel-albums .panel-header {
@@ -544,6 +548,8 @@
   align-items: center;
   justify-content: space-between;
   flex-wrap: wrap;
+  background: #ffffff;
+  border-bottom: 1px solid var(--border);
 }
 
 .panel-albums .panel-header-left {
@@ -619,11 +625,17 @@
   display: flex;
   flex-direction: column;
   gap: 0.6rem;
+  background: #ffffff;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04);
+  transition: all 0.2s ease;
 }
 
 .admin-page .album-card:hover {
-  box-shadow: 0 4px 20px rgba(229, 62, 62, 0.1);
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
   transform: translateY(-2px);
+  border-color: rgba(229, 62, 62, 0.3);
 }
 
 .album-card-icon {
@@ -754,26 +766,26 @@
 }
 
 .btn-edit {
-  background: rgba(49, 130, 206, 0.1);
-  color: #63b3ed;
-  border-color: rgba(49, 130, 206, 0.25);
+  background: rgba(49, 130, 206, 0.08);
+  color: #2b6cb0;
+  border: 1px solid rgba(49, 130, 206, 0.25);
 }
 
 .btn-edit:hover {
-  background: rgba(49, 130, 206, 0.2);
-  border-color: #63b3ed;
+  background: rgba(49, 130, 206, 0.15);
+  border-color: #2b6cb0;
   transform: translateY(-1px);
 }
 
 .btn-delete {
-  background: rgba(229, 62, 62, 0.1);
-  color: #fc8181;
-  border-color: rgba(229, 62, 62, 0.25);
+  background: rgba(229, 62, 62, 0.08);
+  color: #c53030;
+  border: 1px solid rgba(229, 62, 62, 0.25);
 }
 
 .btn-delete:hover {
-  background: rgba(229, 62, 62, 0.2);
-  border-color: #fc8181;
+  background: rgba(229, 62, 62, 0.15);
+  border-color: #c53030;
   transform: translateY(-1px);
 }
 
@@ -791,10 +803,12 @@
 }
 
 .admin-page .modal {
+  background: #ffffff;
+  border: 1px solid var(--border);
   border-radius: 16px;
   width: 90%;
   max-width: 480px;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 20px 40px rgba(15, 23, 42, 0.15);
   transform: scale(0.9) translateY(20px);
   transition: transform 0.3s ease;
 }
@@ -824,10 +838,11 @@
   padding: 4px 8px;
   border-radius: 6px;
   transition: all 0.2s;
+  color: var(--text-muted);
 }
 
 .admin-page .modal-close:hover {
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(15, 23, 42, 0.06);
   color: var(--text);
 }
 
@@ -965,10 +980,24 @@
 }
 
 .admin-page .pagination button {
-  padding: 6px 12px;
-  background: rgba(255, 255, 255, 0.04);
+  padding: 6px 14px;
+  background: #ffffff;
+  border: 1px solid var(--border);
+  color: var(--text);
   border-radius: 6px;
   font-size: 0.8rem;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.admin-page .pagination button:hover:not(:disabled) {
+  background: #f1f5f9;
+  border-color: #cbd5e1;
+}
+
+.admin-page .pagination button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 .admin-page .pagination .page-info {
