@@ -184,8 +184,8 @@
       let html = `<div class="albums-grid">
         ${pageAlbums.map(album => `
           <div class="album-card" id="album-${album.id}">
-            <div class="album-card-cover" style="text-align:center; margin-bottom:8px; height:120px; display:flex; align-items:center; justify-content:center; background:#222; border-radius:8px; overflow:hidden;">
-              ${album.cover_photo ? `<img src="${album.cover_photo}" alt="cover" style="width:auto; max-width:100%; object-fit:cover; display:block; margin:auto; background:#222;" onerror="this.onerror=null;this.outerHTML='<div style=\\'width:100%;height:160px;display:flex;align-items:center;justify-content:center;color:#888;background:#1a1a2e;\\'>Ảnh lỗi</div>';">` : '<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:#888;">Không có ảnh</div>'}
+            <div class="album-card-cover" style="text-align:center; margin-bottom:8px; height:120px; display:flex; align-items:center; justify-content:center; background:#f1f5f9; border:1px solid var(--border); border-radius:8px; overflow:hidden;">
+              ${album.cover_photo ? `<img src="${album.cover_photo}" alt="cover" style="width:auto; max-width:100%; object-fit:cover; display:block; margin:auto;" onerror="this.onerror=null;this.outerHTML='<div style=\\'width:100%;height:120px;display:flex;align-items:center;justify-content:center;color:var(--text-muted);background:#f1f5f9;\\'>Ảnh lỗi</div>';">` : '<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:var(--text-muted);">Không có ảnh</div>'}
             </div>
             <div class="album-card-body">
               <h3>${escapeHtml(album.title)}</h3>
